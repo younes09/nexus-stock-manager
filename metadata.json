@@ -1,0 +1,7 @@
+{
+  "name": "Nexus Stock Manager",
+  "description": "A professional-grade SPA for inventory tracking, client/supplier management, and automated invoice generation with integrated AI insights.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

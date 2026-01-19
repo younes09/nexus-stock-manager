@@ -157,6 +157,7 @@ const App: React.FC = () => {
           ...inv,
           entityId: inv.entity_id,
           entityName: inv.entity_name,
+          paidAmount: inv.paid_amount || 0,
           items: (inv.invoice_items as any[])?.map(item => ({
             ...item,
             productId: item.product_id,
@@ -251,9 +252,9 @@ const App: React.FC = () => {
            if (task.action === 'insert') {
              const inv = task.payload;
              const { items, id, ...header } = inv;
-             const dbHeader = { ...header, entity_id: inv.entityId, entity_name: inv.entityName };
+             const dbHeader = { ...header, entity_id: inv.entityId, entity_name: inv.entityName, paid_amount: inv.paidAmount };
              // @ts-ignore
-             delete dbHeader.entityId; delete dbHeader.entityName;
+             delete dbHeader.entityId; delete dbHeader.entityName; delete dbHeader.paidAmount;
 
              const { data: invData, error: invError } = await supabase.from('invoices').insert([dbHeader]).select();
              if (invError) { error = invError; }
@@ -506,9 +507,9 @@ const App: React.FC = () => {
       setIsSyncing(true);
       try {
         const { items, id, ...header } = inv;
-        const dbHeader = { ...header, entity_id: inv.entityId, entity_name: inv.entityName };
+        const dbHeader = { ...header, entity_id: inv.entityId, entity_name: inv.entityName, paid_amount: inv.paidAmount };
         // @ts-ignore
-        delete dbHeader.entityId; delete dbHeader.entityName;
+        delete dbHeader.entityId; delete dbHeader.entityName; delete dbHeader.paidAmount;
 
         const { data: invData, error: invError } = await supabase.from('invoices').insert([dbHeader]).select();
         if (invError) throw invError;
@@ -540,6 +541,40 @@ const App: React.FC = () => {
       }
     } else if (isSupabaseConfigured) {
       queueTask({ id: Date.now().toString(), type: 'invoice', action: 'insert', payload: inv, timestamp: Date.now() });
+    }
+  };
+
+  const updateInvoice = async (inv: Invoice) => {
+    setState(prev => ({ 
+      ...prev, 
+      invoices: prev.invoices.map(i => i.id === inv.id ? inv : i) 
+    }));
+
+    if (state.isOnline && isSupabaseConfigured && supabase) {
+      setIsSyncing(true);
+      try {
+        const { items, ...header } = inv;
+        const dbHeader = { 
+          number: header.number,
+          type: header.type,
+          entity_id: header.entityId,
+          entity_name: header.entityName,
+          subtotal: header.subtotal,
+          tax: header.tax,
+          total: header.total,
+          paid_amount: header.paidAmount,
+          status: header.status
+        };
+        const { error } = await supabase.from('invoices').update(dbHeader).eq('id', inv.id);
+        if (error) throw error;
+      } catch (error) {
+        console.error('Invoice Cloud Update Failed:', error);
+        queueTask({ id: Date.now().toString(), type: 'invoice', action: 'update', payload: inv, timestamp: Date.now() });
+      } finally {
+        setIsSyncing(false);
+      }
+    } else if (isSupabaseConfigured) {
+      queueTask({ id: Date.now().toString(), type: 'invoice', action: 'update', payload: inv, timestamp: Date.now() });
     }
   };
 
@@ -708,11 +743,11 @@ const App: React.FC = () => {
             <Route path="/" element={<Dashboard state={state} />} />
             <Route path="/products" element={<ProductsPage products={state.products} categories={state.categories} onAdd={addProduct} onUpdate={updateProduct} onDelete={deleteProduct} />} />
             <Route path="/categories" element={<CategoriesPage categories={state.categories} onAdd={addCategory} onUpdate={updateCategory} onDelete={deleteCategory} />} />
-            <Route path="/clients" element={<EntitiesPage type="client" entities={state.entities.filter(e => e.type === 'client')} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} />} />
-            <Route path="/suppliers" element={<EntitiesPage type="supplier" entities={state.entities.filter(e => e.type === 'supplier')} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} />} />
+            <Route path="/clients" element={<EntitiesPage type="client" entities={state.entities.filter(e => e.type === 'client')} invoices={state.invoices} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} />} />
+            <Route path="/suppliers" element={<EntitiesPage type="supplier" entities={state.entities.filter(e => e.type === 'supplier')} invoices={state.invoices} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} />} />
             <Route path="/invoices" element={<InvoicesPage invoices={state.invoices} />} />
             <Route path="/invoice/new/:type" element={<InvoiceCreator products={state.products} entities={state.entities} onSave={addInvoice} />} />
-            <Route path="/invoice/view/:id" element={<InvoiceDetail invoices={state.invoices} entities={state.entities} />} />
+            <Route path="/invoice/view/:id" element={<InvoiceDetail invoices={state.invoices} entities={state.entities} onUpdate={updateInvoice} />} />
           </Routes>
         </div>
       </main>

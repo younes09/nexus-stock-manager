@@ -54,6 +54,7 @@ export interface Invoice {
   subtotal: number;
   tax: number;
   total: number;
+  paidAmount: number;
   status: 'draft' | 'paid' | 'pending';
 }
 export interface SyncTask {

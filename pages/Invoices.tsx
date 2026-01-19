@@ -8,8 +8,6 @@ import {
   User, 
   Filter, 
   X, 
-  ArrowDownWideOverLow,
-  ArrowUpNarrowWide,
   Search
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -197,17 +195,27 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                <div className="flex items-center gap-2">
-                  <User size={14} className="text-slate-400" />
-                  <span className="text-sm font-bold text-slate-700 truncate max-w-[140px]">{inv.entityName}</span>
+              <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User size={14} className="text-slate-400" />
+                    <span className="text-sm font-bold text-slate-700 truncate max-w-[140px]">{inv.entityName}</span>
+                  </div>
+                  <div className="text-lg font-black text-slate-900">{inv.total.toLocaleString()} DA</div>
                 </div>
-                <div className="text-lg font-black text-slate-900">{inv.total.toLocaleString()} DA</div>
+                {inv.total - (inv.paidAmount || 0) > 0 && (
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Balance Due:</span>
+                    <span className="text-sm font-black text-rose-500">{(inv.total - (inv.paidAmount || 0)).toLocaleString()} DA</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-emerald-600 font-black text-[10px] uppercase tracking-[0.15em]">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                <div className={`flex items-center gap-1.5 font-black text-[10px] uppercase tracking-[0.15em] ${
+                  inv.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
+                }`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                   {inv.status}
                 </div>
                 <Link to={`/invoice/view/${inv.id}`} className="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-widest px-4 py-2 bg-indigo-50 rounded-xl">
@@ -227,8 +235,9 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
               <th className="px-8 py-5">Invoice Reference</th>
               <th className="px-8 py-5">Billing Entity</th>
               <th className="px-8 py-5">Classification</th>
-              <th className="px-8 py-5">Settlement (DA)</th>
-              <th className="px-8 py-5">Status</th>
+              <th className="px-8 py-5">Total (DA)</th>
+              <th className="px-8 py-5">Balance (DA)</th>
+              <th className="px-8 py-5 text-center">Status</th>
               <th className="px-8 py-5 text-right">Action</th>
             </tr>
           </thead>
@@ -264,8 +273,17 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                     <div className="text-sm font-black text-slate-900">{inv.total.toLocaleString()} DA</div>
                   </td>
                   <td className="px-8 py-5">
-                    <span className="flex items-center gap-1.5 text-emerald-600 font-black text-[10px] uppercase tracking-widest">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <div className={`text-sm font-black ${
+                      (inv.total - (inv.paidAmount || 0)) > 0 ? 'text-rose-500' : 'text-emerald-500'
+                    }`}>
+                      {(inv.total - (inv.paidAmount || 0)).toLocaleString()} DA
+                    </div>
+                  </td>
+                  <td className="px-8 py-5">
+                    <span className={`flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-widest ${
+                      inv.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`}></div>
                       {inv.status}
                     </span>
                   </td>

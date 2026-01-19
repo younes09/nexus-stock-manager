@@ -22,6 +22,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [hasTorch, setHasTorch] = useState(false);
+  const [paidAmount, setPaidAmount] = useState(0);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   
   const filteredEntities = entities.filter(e => e.type === (invoiceType === 'sale' ? 'client' : 'supplier'));
@@ -29,6 +30,10 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
+
+  useEffect(() => {
+    setPaidAmount(total);
+  }, [total]);
 
   const playBeep = () => {
     try {
@@ -83,7 +88,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
 
         try {
           const capabilities = scanner.getRunningTrackCapabilities();
-          if (capabilities.torch) {
+          if ((capabilities as any).torch) {
             setHasTorch(true);
           }
         } catch (e) {
@@ -194,7 +199,8 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
       subtotal,
       tax,
       total,
-      status: 'paid'
+      paidAmount,
+      status: paidAmount >= total ? 'paid' : 'pending'
     };
 
     onSave(invoice);
@@ -428,6 +434,20 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
             <div className="flex justify-between items-center pt-6 border-t border-slate-200">
               <span className="text-lg font-black text-slate-900 uppercase tracking-tight">Net Payable</span>
               <span className="text-2xl lg:text-3xl font-black text-indigo-600">{total.toLocaleString()} DA</span>
+            </div>
+            <div className="pt-6 space-y-3">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount Paid Today (DA)</label>
+              <input 
+                type="number" 
+                value={paidAmount}
+                onChange={(e) => setPaidAmount(Number(e.target.value))}
+                className="w-full text-right bg-white border border-slate-200 rounded-2xl font-black py-3 px-5 focus:ring-4 focus:ring-indigo-500/10 outline-none"
+              />
+              {paidAmount < total && (
+                <div className="text-right text-[10px] font-bold text-rose-500 uppercase tracking-widest">
+                  Remaining Debt: {(total - paidAmount).toLocaleString()} DA
+                </div>
+              )}
             </div>
           </div>
         </div>

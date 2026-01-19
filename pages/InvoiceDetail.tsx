@@ -7,12 +7,15 @@ import { ChevronLeft, Printer, FileText, Calendar, User, MapPin, Phone, Mail, St
 interface Props {
   invoices: Invoice[];
   entities: Entity[];
+  onUpdate: (inv: Invoice) => void;
 }
 
-const InvoiceDetail: React.FC<Props> = ({ invoices, entities }) => {
+const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const invoice = invoices.find(inv => inv.id === id);
+  const [paymentAmount, setPaymentAmount] = React.useState(0);
+  const [isPaying, setIsPaying] = React.useState(false);
 
   if (!invoice) {
     return (
@@ -100,19 +103,80 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities }) => {
           <div className="flex flex-col justify-end text-left sm:text-right space-y-4">
             <div>
               <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Status</h3>
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-xs font-black uppercase tracking-widest">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest ${
+                invoice.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${invoice.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`}></div>
                 {invoice.status}
               </span>
             </div>
             <div>
-              <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Due Amount (DA)</h3>
+              <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Total (DA)</h3>
               <div className="text-4xl font-black text-slate-900 tracking-tighter">
                 {invoice.total.toLocaleString()} DA
               </div>
             </div>
+            {invoice.paidAmount < invoice.total && (
+              <div className="bg-rose-50 p-4 rounded-2xl">
+                <h3 className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em] mb-1">Balance Due</h3>
+                <div className="text-2xl font-black text-rose-600 tracking-tighter">
+                  {(invoice.total - invoice.paidAmount).toLocaleString()} DA
+                </div>
+                <button 
+                  onClick={() => { setPaymentAmount(invoice.total - invoice.paidAmount); setIsPaying(true); }}
+                  className="mt-3 w-full bg-rose-600 text-white py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-700 transition-colors shadow-lg shadow-rose-500/20 no-print"
+                >
+                  Record Payment
+                </button>
+              </div>
+            )}
+            {invoice.paidAmount >= invoice.total && invoice.paidAmount > 0 && (
+              <div className="bg-emerald-50 p-4 rounded-2xl">
+                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Settle Status: Fully Paid</span>
+              </div>
+            )}
           </div>
         </div>
+
+        {isPaying && (
+          <div className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2.5rem] p-8 lg:p-12 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Settle Balance</h3>
+              <p className="text-slate-500 text-sm font-bold mb-8">Recording additional payment for {invoice.number}</p>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Payment Amount (DA)</label>
+                  <input 
+                    type="number" 
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                    max={invoice.total - invoice.paidAmount}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-xl font-black text-slate-900 focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                  />
+                </div>
+                
+                <div className="flex gap-3 pt-4">
+                  <button onClick={() => setIsPaying(false)} className="flex-1 py-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition-all">Cancel</button>
+                  <button 
+                    onClick={() => {
+                      const newPaid = invoice.paidAmount + paymentAmount;
+                      onUpdate({
+                        ...invoice,
+                        paidAmount: newPaid,
+                        status: newPaid >= invoice.total ? 'paid' : 'pending'
+                      });
+                      setIsPaying(false);
+                    }}
+                    className="flex-2 py-4 px-8 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all uppercase text-xs tracking-widest"
+                  >
+                    Post Payment
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Table Items */}
         <div className="space-y-6">

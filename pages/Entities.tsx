@@ -9,9 +9,10 @@ interface Props {
   onAdd: (e: Entity) => void;
   onUpdate: (e: Entity) => void;
   onDelete: (id: string) => void;
+  invoices: any[];
 }
 
-const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDelete }) => {
+const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDelete, invoices }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
 
@@ -81,6 +82,26 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
                 <div className="p-1.5 bg-slate-100 rounded-lg mt-0.5"><MapPin size={14} className="text-slate-400 flex-shrink-0" /></div>
                 <span className="line-clamp-2">{e.address}</span>
               </div>
+              
+              {(() => {
+                const entityInvoices = invoices.filter(inv => inv.entityId === e.id);
+                const totalDebt = entityInvoices.reduce((sum, inv) => sum + (inv.total - (inv.paidAmount || 0)), 0);
+                
+                if (totalDebt > 0) {
+                  return (
+                    <div className="mt-4 p-4 bg-rose-50 rounded-2xl border border-rose-100">
+                      <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Outstanding Balance</div>
+                      <div className="text-lg font-black text-rose-600">{totalDebt.toLocaleString()} DA</div>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="mt-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                    <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Account Status</div>
+                    <div className="text-sm font-black text-emerald-600 uppercase tracking-widest">Fully Settled</div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Decorative background circle */}

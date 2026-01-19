@@ -1,35 +1,45 @@
 import React, { useState } from 'react';
-import { Stethoscope, Lock, User, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Stethoscope, Lock, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
 import { User as UserType } from '../types';
+import { supabase, isSupabaseConfigured } from '../supabase';
 
 interface Props {
   onLogin: (user: UserType) => void;
 }
 
 const LoginPage: React.FC<Props> = ({ onLogin }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    setTimeout(() => {
-      if (username === 'admin' && password === 'password123') {
-        onLogin({
-          id: '1',
-          username: 'admin',
-          fullName: 'Dr. Sarah Algiers',
-          role: 'Lead Specialist'
-        });
-      } else {
-        setError('Invalid clinical credentials. Please check your username or password.');
-        setLoading(false);
-      }
-    }, 1200);
+    if (!isSupabaseConfigured || !supabase) {
+      setError('Cloud authentication is not configured.');
+      setLoading(false);
+      return;
+    }
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else if (data.user) {
+      onLogin({
+        id: data.user.id,
+        email: data.user.email || '',
+        fullName: data.user.user_metadata?.fullName || data.user.email?.split('@')[0] || 'Medical Officer',
+        role: data.user.user_metadata?.role || 'authorized'
+      });
+    }
   };
 
   return (
@@ -58,17 +68,18 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Username</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
-                  <User size={18} />
+                  <Mail size={18} />
                 </div>
                 <input 
-                  type="text" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-14 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white font-bold transition-all text-slate-800 placeholder:text-slate-300"
-                  placeholder="Clinical ID"
+                  placeholder="admin@nexus.com"
+                  required
                 />
               </div>
             </div>
@@ -114,7 +125,7 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
 
           <div className="text-center">
             <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-              Demo Access: <span className="text-indigo-400">admin</span> / <span className="text-indigo-400">password123</span>
+              Provide your clinical credentials to establish a secure link.
             </p>
           </div>
         </div>

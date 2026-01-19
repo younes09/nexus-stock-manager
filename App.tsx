@@ -50,7 +50,7 @@ const INITIAL_DATA: AppState = {
   isOnline: navigator.onLine
 };
 
-const SyncIndicator: React.FC<{ isSyncing: boolean; isSupabaseConfigured: boolean; isOnline: boolean; pendingCount: number; className?: string }> = ({ isSyncing, isSupabaseConfigured, isOnline, pendingCount, className }) => (
+const SyncIndicator: React.FC<{ isSyncing: boolean; isSupabaseConfigured: boolean; isOnline: boolean; pendingCount: number; onClear?: () => void; className?: string }> = ({ isSyncing, isSupabaseConfigured, isOnline, pendingCount, onClear, className }) => (
   <div className={`flex items-center gap-2 ${className}`}>
     {isSyncing && (
       <div className="bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 animate-in slide-in-from-right duration-300">
@@ -59,10 +59,10 @@ const SyncIndicator: React.FC<{ isSyncing: boolean; isSupabaseConfigured: boolea
       </div>
     )}
     {pendingCount > 0 && (
-      <div className="bg-amber-500 text-white px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 animate-pulse">
+      <button onClick={onClear} className="bg-amber-500 text-white px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 animate-pulse hover:bg-amber-600 transition-colors" title="Click to clear stuck tasks">
         <RefreshCcw size={12} />
         <span className="text-[9px] font-black uppercase tracking-widest">{pendingCount} Pending</span>
-      </div>
+      </button>
     )}
     <div className={`px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border ${
       isSupabaseConfigured ? (isOnline ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-rose-50 border-rose-100 text-rose-600') : 'bg-amber-50 border-amber-100 text-amber-600'
@@ -85,19 +85,13 @@ const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Load local state initially
+  // Load local state initially & Auth
   useEffect(() => {
     const savedState = localStorage.getItem(STORAGE_KEY);
-    const savedUser = localStorage.getItem('dentastock_nexus_user');
-    
-    let newState = savedState ? { ...INITIAL_DATA, ...JSON.parse(savedState) } : INITIAL_DATA;
-    if (savedUser) newState.user = JSON.parse(savedUser);
-    
-    // Ensure syncQueue and isOnline are always present
-    if (!newState.syncQueue) newState.syncQueue = [];
-    newState.isOnline = navigator.onLine;
-
-    setState(newState);
+    if (savedState) {
+      const parsed = JSON.parse(savedState);
+      setState(prev => ({ ...prev, ...parsed, user: null }));
+    }
     
     // Online/Offline detection
     const handleStatusChange = () => {
@@ -106,16 +100,61 @@ const App: React.FC = () => {
     window.addEventListener('online', handleStatusChange);
     window.addEventListener('offline', handleStatusChange);
 
-    if (isSupabaseConfigured) {
-      fetchData();
+    if (isSupabaseConfigured && supabase) {
+      // 1. Initial Auth Check
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          const user: UserType = {
+            id: session.user.id,
+            email: session.user.email || '',
+            fullName: session.user.user_metadata?.fullName || session.user.email?.split('@')[0] || 'Medical Officer',
+            role: session.user.user_metadata?.role || 'authorized'
+          };
+          setState(prev => ({ ...prev, user }));
+          fetchData();
+        } else {
+          setIsLoading(false);
+        }
+      });
+
+      // 2. Auth Listener
+      const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          const user: UserType = {
+            id: session.user.id,
+            email: session.user.email || '',
+            fullName: session.user.user_metadata?.fullName || session.user.email?.split('@')[0] || 'Medical Officer',
+            role: session.user.user_metadata?.role || 'authorized'
+          };
+          setState(prev => ({ ...prev, user }));
+          fetchData();
+        } else {
+          setState(prev => ({ ...prev, user: null }));
+          navigate('/');
+        }
+      });
+
+      // 3. Realtime Listener
+      const channel = supabase
+        .channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+          fetchData(true);
+        })
+        .subscribe();
+
+      return () => {
+        window.removeEventListener('online', handleStatusChange);
+        window.removeEventListener('offline', handleStatusChange);
+        authSub.unsubscribe();
+        supabase.removeChannel(channel);
+      };
     } else {
       setIsLoading(false);
+      return () => {
+        window.removeEventListener('online', handleStatusChange);
+        window.removeEventListener('offline', handleStatusChange);
+      };
     }
-
-    return () => {
-      window.removeEventListener('online', handleStatusChange);
-      window.removeEventListener('offline', handleStatusChange);
-    };
   }, []);
 
   // Sync state to local storage whenever it changes (fallback)
@@ -175,14 +214,16 @@ const App: React.FC = () => {
 
   const handleLogin = (user: UserType) => {
     setState(prev => ({ ...prev, user }));
-    localStorage.setItem('dentastock_nexus_user', JSON.stringify(user));
     navigate('/');
   };
 
-  const handleLogout = () => {
-    setState(prev => ({ ...prev, user: null }));
-    localStorage.removeItem('dentastock_nexus_user');
-    navigate('/');
+  const handleLogout = async () => {
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    } else {
+      setState(prev => ({ ...prev, user: null }));
+      navigate('/');
+    }
   };
 
   // --- Sync Logic ---
@@ -351,6 +392,13 @@ const App: React.FC = () => {
   };
 
   const deleteProduct = async (id: string) => {
+    // Check if product is in use
+    const isUsed = state.invoices.some(inv => inv.items.some(item => item.productId === id));
+    if (isUsed) {
+      alert("Cannot delete this product because it is part of existing invoices. This is to ensure data integrity.");
+      return;
+    }
+
     setState(prev => ({ ...prev, products: prev.products.filter(p => p.id !== id) }));
 
     if (state.isOnline && isSupabaseConfigured && supabase) {
@@ -360,7 +408,15 @@ const App: React.FC = () => {
         if (error) throw error;
       } catch (err) {
         console.error('Cloud Delete Failed, Queuing:', err);
-        queueTask({ id: Date.now().toString(), type: 'product', action: 'delete', payload: { id }, timestamp: Date.now() });
+        // Only queue if it's NOT a constraint violation (23503)
+        // @ts-ignore
+        if (err.code !== '23503') {
+           queueTask({ id: Date.now().toString(), type: 'product', action: 'delete', payload: { id }, timestamp: Date.now() });
+        } else {
+           alert("Unable to delete from cloud: Product is in use.");
+           // Revert local state
+           fetchData(true);
+        }
       } finally {
         setIsSyncing(false);
       }
@@ -578,8 +634,6 @@ const App: React.FC = () => {
     }
   };
 
-  if (!state.user) return <LoginPage onLogin={handleLogin} />;
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -591,12 +645,14 @@ const App: React.FC = () => {
     );
   }
 
+  if (!state.user) return <LoginPage onLogin={handleLogin} />;
+
   const navItems = [
-    { path: '/', label: 'Dash', icon: <LayoutDashboard size={20} /> },
-    { path: '/products', label: 'Stock', icon: <Package size={20} /> },
+    { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+    { path: '/products', label: 'Products', icon: <Package size={20} /> },
     { path: '/categories', label: 'Categories', icon: <Layers size={20} /> },
-    { path: '/clients', label: 'Practitioners', icon: <Users size={20} /> },
-    { path: '/invoices', label: 'Ledger', icon: <FileText size={20} /> },
+    { path: '/clients', label: 'Clients', icon: <Users size={20} /> },
+    { path: '/invoices', label: 'Invoices', icon: <FileText size={20} /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -650,7 +706,7 @@ const App: React.FC = () => {
             isActive('/suppliers') ? 'bg-sky-600 text-white shadow-lg' : 'text-indigo-300 hover:bg-indigo-900/50 hover:text-white'
           }`}>
             <Truck size={20} />
-            <span className="font-medium">Supply Labs</span>
+            <span className="font-medium">Suppliers</span>
           </Link>
         </nav>
 
@@ -679,6 +735,7 @@ const App: React.FC = () => {
                 isSupabaseConfigured={isSupabaseConfigured} 
                 isOnline={state.isOnline} 
                 pendingCount={state.syncQueue.length} 
+                onClear={() => setState(prev => ({ ...prev, syncQueue: [] }))}
             />
             <div className="relative">
               <button 

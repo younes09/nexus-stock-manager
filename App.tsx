@@ -647,12 +647,33 @@ const App: React.FC = () => {
 
   if (!state.user) return <LoginPage onLogin={handleLogin} />;
 
-  const navItems = [
-    { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { path: '/products', label: 'Products', icon: <Package size={20} /> },
-    { path: '/categories', label: 'Categories', icon: <Layers size={20} /> },
-    { path: '/clients', label: 'Clients', icon: <Users size={20} /> },
-    { path: '/invoices', label: 'Invoices', icon: <FileText size={20} /> },
+  const navGroups = [
+    {
+      title: 'Overview',
+      items: [
+        { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+      ]
+    },
+    {
+      title: 'Inventory',
+      items: [
+        { path: '/products', label: 'Products', icon: <Package size={20} /> },
+        { path: '/categories', label: 'Categories', icon: <Layers size={20} /> },
+      ]
+    },
+    {
+      title: 'Relations',
+      items: [
+        { path: '/clients', label: 'Clients', icon: <Users size={20} /> },
+        { path: '/suppliers', label: 'Suppliers', icon: <Truck size={20} /> },
+      ]
+    },
+    {
+      title: 'Finance',
+      items: [
+        { path: '/invoices', label: 'Invoices', icon: <FileText size={20} /> },
+      ]
+    }
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -693,21 +714,22 @@ const App: React.FC = () => {
           <span className="font-bold text-xl tracking-tight">DentaStock</span>
         </div>
         
-        <nav className="flex-grow py-6 px-4 space-y-2">
-          {navItems.map(item => (
-            <Link key={item.path} to={item.path} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-              isActive(item.path) ? 'bg-sky-600 text-white shadow-lg' : 'text-indigo-300 hover:bg-indigo-900/50 hover:text-white'
-            }`}>
-              {item.icon}
-              <span className="font-medium">{item.label}</span>
-            </Link>
+        <nav className="flex-grow py-6 px-4 space-y-6 overflow-y-auto">
+          {navGroups.map((group, idx) => (
+            <div key={idx}>
+              <h3 className="px-4 mb-2 text-xs font-bold text-indigo-400 uppercase tracking-wider">{group.title}</h3>
+              <div className="space-y-1">
+                {group.items.map(item => (
+                  <Link key={item.path} to={item.path} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    isActive(item.path) ? 'bg-sky-600 text-white shadow-lg' : 'text-indigo-300 hover:bg-indigo-900/50 hover:text-white'
+                  }`}>
+                    {item.icon}
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
-          <Link to="/suppliers" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-            isActive('/suppliers') ? 'bg-sky-600 text-white shadow-lg' : 'text-indigo-300 hover:bg-indigo-900/50 hover:text-white'
-          }`}>
-            <Truck size={20} />
-            <span className="font-medium">Suppliers</span>
-          </Link>
         </nav>
 
         <div className="p-4 space-y-3 border-t border-indigo-900">
@@ -724,11 +746,7 @@ const App: React.FC = () => {
       {isMenuOpen && <div className="fixed inset-0 bg-black/50 z-[65] lg:hidden backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />}
 
       <main id="root-main" className="flex-grow flex flex-col min-w-0 min-h-screen">
-        <header className="hidden lg:flex h-16 bg-white border-b border-slate-200 items-center justify-between px-8 no-print sticky top-0 z-20">
-          <div className="flex items-center gap-4 text-slate-500">
-            <Search size={20} />
-            <input type="text" placeholder="Search supplies..." className="bg-transparent outline-none w-64 focus:w-80 transition-all text-slate-700 font-medium" />
-          </div>
+        <header className="hidden lg:flex h-16 bg-white border-b border-slate-200 items-center justify-end px-8 no-print sticky top-0 z-20">
           <div className="flex items-center gap-4">
             <SyncIndicator 
                 isSyncing={isSyncing} 

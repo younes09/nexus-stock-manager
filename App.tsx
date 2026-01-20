@@ -329,9 +329,28 @@ const App: React.FC = () => {
     setIsSyncing(false);
   };
 
+  // Process queue when online status changes
   useEffect(() => {
     if (state.isOnline) processSyncQueue();
   }, [state.isOnline]);
+
+  // Process queue when new tasks are added (debounced)
+  useEffect(() => {
+    if (state.syncQueue.length > 0 && state.isOnline && !isSyncing) {
+      const timer = setTimeout(() => processSyncQueue(), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [state.syncQueue.length, state.isOnline]);
+
+  // Periodic retry for stuck tasks (every 30 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (state.syncQueue.length > 0 && state.isOnline && !isSyncing) {
+        processSyncQueue();
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [state.syncQueue.length, state.isOnline, isSyncing]);
 
   // --- Storage Mutators ---
 

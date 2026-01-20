@@ -635,7 +635,6 @@ const App: React.FC = () => {
           entity_id: header.entityId,
           entity_name: header.entityName,
           subtotal: header.subtotal,
-          tax: header.tax,
           total: header.total,
           paid_amount: header.paidAmount,
           status: header.status

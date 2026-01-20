@@ -209,10 +209,6 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
               <span>Subtotal</span>
               <span className="text-slate-900">{invoice.subtotal.toLocaleString()} DA</span>
             </div>
-            <div className="flex justify-between text-slate-500 font-bold text-sm">
-              <span>Vat (10%)</span>
-              <span className="text-slate-900">{invoice.tax.toLocaleString()} DA</span>
-            </div>
             <div className="flex justify-between items-center pt-6 border-t border-slate-900">
               <span className="text-lg font-black text-slate-900 uppercase tracking-tight">Total Payable</span>
               <span className="text-3xl font-black text-indigo-600">{invoice.total.toLocaleString()} DA</span>

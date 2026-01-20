@@ -28,8 +28,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
   const filteredEntities = entities.filter(e => e.type === (invoiceType === 'sale' ? 'client' : 'supplier'));
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
+  const total = subtotal;
 
   useEffect(() => {
     setPaidAmount(total);
@@ -197,7 +196,6 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
       entityName: entity.name,
       items,
       subtotal,
-      tax,
       total,
       paidAmount,
       status: paidAmount >= total ? 'paid' : 'pending'
@@ -426,10 +424,6 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
             <div className="flex justify-between text-slate-500 font-bold text-sm">
               <span>Subtotal</span>
               <span className="text-slate-900">{subtotal.toLocaleString()} DA</span>
-            </div>
-            <div className="flex justify-between text-slate-500 font-bold text-sm">
-              <span>Standard Tax (10%)</span>
-              <span className="text-slate-900">{tax.toLocaleString()} DA</span>
             </div>
             <div className="flex justify-between items-center pt-6 border-t border-slate-200">
               <span className="text-lg font-black text-slate-900 uppercase tracking-tight">Net Payable</span>

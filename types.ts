@@ -52,7 +52,6 @@ export interface Invoice {
   entityName: string;
   items: InvoiceItem[];
   subtotal: number;
-  tax: number;
   total: number;
   paidAmount: number;
   status: 'draft' | 'paid' | 'pending';

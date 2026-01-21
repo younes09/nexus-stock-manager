@@ -18,6 +18,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
   const invoice = invoices.find(inv => inv.id === id);
   const [paymentAmount, setPaymentAmount] = React.useState(0);
   const [isPaying, setIsPaying] = React.useState(false);
+  const [isProforma, setIsProforma] = React.useState(invoice?.type === 'sale' && invoice?.status !== 'paid');
 
   if (!invoice) {
     return (
@@ -40,6 +41,19 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
           {t('common.back')}
         </button>
         <div className="flex gap-2">
+          {invoice.type === 'sale' && (
+            <button 
+              onClick={() => setIsProforma(!isProforma)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-2xl font-bold transition-all border-2 ${
+                isProforma 
+                  ? 'bg-amber-50 border-amber-200 text-amber-600' 
+                  : 'bg-slate-50 border-slate-100 text-slate-400'
+              }`}
+            >
+              <FileText size={18} />
+              {t('invoices.proforma')}
+            </button>
+          )}
           <button 
             onClick={() => window.print()} 
             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-500/30"
@@ -71,10 +85,12 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
             </div>
           </div>
           <div className="text-left sm:text-right w-full sm:w-auto space-y-2">
-            <h2 className={`text-5xl font-black uppercase mb-4 opacity-10 ${invoice.type === 'sale' ? 'text-indigo-600' : 'text-emerald-600'}`}>
-              {invoice.type === 'sale' ? t('invoices.reference').split(' ')[0] : t('invoices.newPurchase').split(' ')[1]}
+            <h2 className={`text-4xl font-black uppercase mb-4 opacity-10 leading-none ${invoice.type === 'sale' ? (isProforma ? 'text-amber-600' : 'text-indigo-600') : 'text-emerald-600'}`}>
+              {invoice.type === 'purchase' 
+                ? t('invoices.purchaseOrder') 
+                : (isProforma ? t('invoices.proforma') : t('invoices.finalInvoice'))}
             </h2>
-            <div className="inline-block px-4 py-2 bg-slate-50 rounded-xl">
+            <div className="inline-block px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 min-w-[200px]">
               <div className="flex justify-between sm:justify-end gap-6 border-b border-slate-100 pb-2">
                 <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">{t('common.sku')}</span>
                 <span className="font-black text-slate-900">{invoice.number}</span>
@@ -226,14 +242,27 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
             <p>{t('invoiceDetail.term2')}</p>
             <p>{t('invoiceDetail.term3')}</p>
           </div>
-          <div className="flex flex-col items-center sm:items-end justify-end space-y-6">
             <div className="text-center sm:text-right">
-              <div className="h-16 w-32 border-b-2 border-slate-200 mb-2"></div>
+              <div className="h-16 w-48 border-b-2 border-slate-200 mb-2 mx-auto sm:ml-auto"></div>
               <p className="uppercase tracking-[0.2em] font-black text-slate-900">{t('invoiceDetail.authorizedSignature')}</p>
+              <p className="text-[8px] text-slate-300 mt-1 uppercase tracking-widest">Cachet & Signature</p>
             </div>
-          </div>
         </div>
       </div>
+      
+      <style>{`
+        @media print {
+          body { background: white !important; }
+          .no-print { display: none !important; }
+          #root-main { padding: 0 !important; margin: 0 !important; }
+          .bg-white { border: none !important; box-shadow: none !important; padding: 0 !important; }
+          .rounded-[2.5rem] { border-radius: 0 !important; }
+          .bg-slate-50 { background-color: transparent !important; border-color: #f1f5f9 !important; }
+          .opacity-10 { opacity: 1 !important; color: #000 !important; }
+          .text-indigo-600, .text-emerald-600, .text-amber-600 { color: black !important; }
+          .shadow-2xl { box-shadow: none !important; }
+        }
+      `}</style>
       
       {/* Decorative Branding */}
       <div className="text-center py-10 opacity-20 pointer-events-none no-print">

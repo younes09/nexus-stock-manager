@@ -4,8 +4,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart, Pie, Cell 
 } from 'recharts';
-import { TrendingUp, Activity, CalendarOff, ShieldAlert, Package, Layers } from 'lucide-react';
+import { TrendingUp, Activity, CalendarOff, ShieldAlert, Package, Layers, Plus, ShoppingCart, Truck } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { Link } from 'react-router-dom';
 
 interface Props {
   state: AppState;
@@ -72,6 +73,39 @@ const Dashboard: React.FC<Props> = ({ state }) => {
         <StatCard title={t('dashboard.profit')} value={formatDA(metrics.profit)} icon={<Activity size={24} />} trend="+8.4%" color="bg-indigo-50 text-indigo-600" />
         <StatCard title={t('dashboard.safetyAlerts')} value={metrics.expiringCount.toString()} icon={<CalendarOff size={24} />} color={metrics.expiringCount > 0 ? "bg-rose-50 text-rose-600" : "bg-slate-50 text-slate-400"} subValue={t('dashboard.expiringSoon')} />
         <StatCard title={t('dashboard.clinicalAlerts')} value={metrics.lowStockItems.toString()} icon={<ShieldAlert size={24} />} color="bg-amber-50 text-amber-600" subValue={t('dashboard.ofLines').replace('{total}', metrics.totalProducts.toString())} />
+      </div>
+
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4">{t('dashboard.quickActions')}</h3>
+        <div className="flex flex-wrap gap-4">
+          <Link 
+            to="/invoice/new/sale" 
+            className="flex-1 min-w-[160px] flex items-center gap-4 p-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-2xl transition-all group"
+          >
+            <div className="p-3 bg-indigo-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+              <ShoppingCart size={20} />
+            </div>
+            <div>
+              <div className="font-black text-indigo-900 leading-tight">{t('dashboard.newSale')}</div>
+              <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{t('nav.newSale')}</div>
+            </div>
+            <Plus className="ml-auto text-indigo-300" size={18} />
+          </Link>
+
+          <Link 
+            to="/invoice/new/purchase" 
+            className="flex-1 min-w-[160px] flex items-center gap-4 p-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl transition-all group"
+          >
+            <div className="p-3 bg-emerald-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+              <Truck size={20} />
+            </div>
+            <div>
+              <div className="font-black text-emerald-900 leading-tight">{t('dashboard.newPurchase')}</div>
+              <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Stock Restock</div>
+            </div>
+            <Plus className="ml-auto text-emerald-300" size={18} />
+          </Link>
+        </div>
       </div>
 
 

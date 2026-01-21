@@ -13,7 +13,8 @@ import {
   X,
   Stethoscope,
   Layers,
-  LogOut
+  LogOut,
+  Wallet
 } from 'lucide-react';
 import { Product, Entity, Invoice, AppState, Category, User as UserType } from './types';
 import Dashboard from './pages/Dashboard';
@@ -24,6 +25,7 @@ import InvoiceCreator from './pages/InvoiceCreator';
 import CategoriesPage from './pages/Categories';
 import InvoiceDetail from './pages/InvoiceDetail';
 import LoginPage from './pages/Login';
+import CashManagement from './pages/CashManagement';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { useLanguage } from './LanguageContext';
 
@@ -34,6 +36,7 @@ const INITIAL_DATA: AppState = {
   entities: [],
   invoices: [],
   categories: [],
+  cashTransactions: [],
   user: null,
 };
 
@@ -112,11 +115,13 @@ const App: React.FC = () => {
         { data: categories },
         { data: entities },
         { data: invoices },
+        { data: cashTransactions },
       ] = await Promise.all([
         supabase.from('products').select('*').order('name'),
         supabase.from('categories').select('*').order('name'),
         supabase.from('entities').select('*').order('name'),
         supabase.from('invoices').select('*, invoice_items(*)').order('date', { ascending: false }),
+        supabase.from('cash_transactions').select('*').order('date', { ascending: false }),
       ]);
 
       setState(prev => ({
@@ -142,6 +147,7 @@ const App: React.FC = () => {
             total: item.total
           })) || []
         })) || [],
+        cashTransactions: (cashTransactions as any[]) || [],
       }));
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -422,6 +428,38 @@ const App: React.FC = () => {
     }
   };
 
+
+  const addCashTransaction = async (t_item: any) => {
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { id, ...newT } = t_item;
+      const { error } = await supabase.from('cash_transactions').insert([newT]);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to add transaction:', err);
+      alert('Failed to record transaction. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const deleteCashTransaction = async (id: string) => {
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { error } = await supabase.from('cash_transactions').delete().eq('id', id);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to delete transaction:', err);
+      alert('Failed to delete transaction. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -460,6 +498,7 @@ const App: React.FC = () => {
       title: t('nav.finance'),
       items: [
         { path: '/invoices', label: t('common.invoices'), icon: <FileText size={20} /> },
+        { path: '/cash', label: t('nav.cash'), icon: <Wallet size={20} /> },
       ]
     }
   ];
@@ -606,12 +645,13 @@ const App: React.FC = () => {
             <Route path="/invoices" element={<InvoicesPage invoices={state.invoices} />} />
             <Route path="/invoice/new/:type" element={<InvoiceCreator products={state.products} entities={state.entities} onSave={addInvoice} />} />
             <Route path="/invoice/view/:id" element={<InvoiceDetail invoices={state.invoices} entities={state.entities} onUpdate={updateInvoice} />} />
+            <Route path="/cash" element={<CashManagement transactions={state.cashTransactions} onAdd={addCashTransaction} onDelete={deleteCashTransaction} />} />
           </Routes>
         </div>
       </main>
 
       {/* Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-t border-slate-200 grid grid-cols-5 items-center px-2 z-50 shadow-lg">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-t border-slate-200 grid grid-cols-5 items-center px-2 z-50 shadow-lg no-print">
         <Link to="/" className={`flex flex-col items-center gap-1 ${isActive('/') ? 'text-sky-600' : 'text-slate-400'}`}>
           <LayoutDashboard size={22} /><span className="text-[10px] font-black uppercase">Dash</span>
         </Link>

@@ -58,10 +58,20 @@ export interface Invoice {
   status: 'draft' | 'paid' | 'pending';
 }
 
+export interface CashTransaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: 'income' | 'expense';
+  category: string;
+}
+
 export interface AppState {
   products: Product[];
   entities: Entity[];
   invoices: Invoice[];
   categories: Category[];
+  cashTransactions: CashTransaction[];
   user: User | null;
 }

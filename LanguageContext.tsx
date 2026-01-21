@@ -99,6 +99,7 @@ export const translations: Record<Language, any> = {
       inventory: 'Inventory',
       relations: 'Relations',
       finance: 'Finance',
+      cash: 'Cash Desk',
       newSale: 'New Practice Sale',
       endSession: 'End Session'
     },
@@ -108,6 +109,9 @@ export const translations: Record<Language, any> = {
       revenue: 'Procedure Revenue',
       profit: 'Est. Clinical Profit',
       safetyAlerts: 'Safety Alerts',
+      quickActions: 'Quick Actions',
+      newSale: 'New Sale',
+      newPurchase: 'New Purchase',
       clinicalAlerts: 'Clinical Alerts',
       expiringSoon: 'Expiring soon',
       ofLines: 'of {total} lines',
@@ -192,7 +196,10 @@ export const translations: Record<Language, any> = {
       reference: 'Invoice Reference',
       balance: 'Balance (DA)',
       view: 'View',
-      noResults: 'No transactions found matching your selection.'
+      noResults: 'No transactions found matching your selection.',
+      proforma: 'Proforma Invoice',
+      purchaseOrder: 'Purchase Order',
+      finalInvoice: 'Tax Invoice'
     },
     invoiceCreator: {
       system: 'Invoice System',
@@ -244,6 +251,22 @@ export const translations: Record<Language, any> = {
       clinicalManagement: 'Advanced Clinical Management',
       cryptoLayer: 'Secured by Nexus Crypto-Layer v4.0.2',
       errorConfig: 'Cloud authentication is not configured.'
+    },
+    cash: {
+      title: 'Cash Management (Caisse)',
+      subtitle: 'Track daily expenses and actual cash balance.',
+      balance: 'Current Balance',
+      transactions: 'Recent Transactions',
+      addTransaction: 'Record Operation',
+      description: 'Description',
+      amount: 'Amount (DA)',
+      type: 'Type',
+      income: 'Income',
+      expense: 'Expense',
+      category: 'Category',
+      date: 'Date',
+      confirmDelete: 'Are you sure you want to delete this transaction?',
+      noTransactions: 'No transactions recorded for this period.'
     }
   },
   fr: {
@@ -294,6 +317,7 @@ export const translations: Record<Language, any> = {
       inventory: 'Inventaire',
       relations: 'Relations',
       finance: 'Finance',
+      cash: 'La Caisse',
       newSale: 'Nouvelle Vente',
       endSession: 'Déconnexion'
     },
@@ -303,6 +327,9 @@ export const translations: Record<Language, any> = {
       revenue: 'Chiffre d\'Affaires',
       profit: 'Bénéfice Clinique Est.',
       safetyAlerts: 'Alertes Sécurité',
+      quickActions: 'Accès Rapides',
+      newSale: 'Nouvelle Vente',
+      newPurchase: 'Nouvel Achat',
       clinicalAlerts: 'Alertes Cliniques',
       expiringSoon: 'Expire bientôt',
       ofLines: 'sur {total} lignes',
@@ -387,7 +414,10 @@ export const translations: Record<Language, any> = {
       reference: 'Référence Facture',
       balance: 'Solde (DA)',
       view: 'Voir',
-      noResults: 'Aucune transaction ne correspond à votre sélection.'
+      noResults: 'Aucune transaction ne correspond à votre sélection.',
+      proforma: 'Facture Proforma',
+      purchaseOrder: 'Bon de Commande',
+      finalInvoice: 'Facture Fiscale'
     },
     invoiceCreator: {
       system: 'Système de Facturation',
@@ -439,6 +469,22 @@ export const translations: Record<Language, any> = {
       clinicalManagement: 'Gestion Clinique Avancée',
       cryptoLayer: 'Sécurisé par Nexus Crypto-Layer v4.0.2',
       errorConfig: 'L\'authentification cloud n\'est pas configurée.'
+    },
+    cash: {
+      title: 'Gestion de la Caisse',
+      subtitle: 'Suivi des dépenses quotidiennes et du solde réel.',
+      balance: 'Solde Actuel',
+      transactions: 'Transactions Récentes',
+      addTransaction: 'Enregistrer une Opération',
+      description: 'Description',
+      amount: 'Montant (DA)',
+      type: 'Type',
+      income: 'Recette (Entrée)',
+      expense: 'Dépense (Sortie)',
+      category: 'Catégorie',
+      date: 'Date',
+      confirmDelete: 'Êtes-vous sûr de vouloir supprimer cette transaction ?',
+      noTransactions: 'Aucune transaction enregistrée pour cette période.'
     }
   }
 };

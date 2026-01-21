@@ -61,4 +61,13 @@ export const supabase = isSupabaseConfigured
  *   cost NUMERIC NOT NULL,
  *   total NUMERIC NOT NULL
  * );
+ * 
+ * CREATE TABLE cash_transactions (
+ *   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+ *   date TIMESTAMPTZ DEFAULT now(),
+ *   description TEXT NOT NULL,
+ *   amount NUMERIC NOT NULL,
+ *   type TEXT NOT NULL, -- 'income' or 'expense'
+ *   category TEXT NOT NULL
+ * );
  */

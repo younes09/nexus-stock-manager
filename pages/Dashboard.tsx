@@ -122,8 +122,8 @@ const Dashboard: React.FC<Props> = ({ state }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <div className="lg:col-span-2 bg-white p-4 lg:p-6 rounded-3xl shadow-sm border border-slate-200 transition-colors">
           <h3 className="text-lg font-bold mb-6 text-slate-800">Financial Performance (DA)</h3>
-          <div className="h-64 lg:h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-64 lg:h-80 w-full min-h-[16rem]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={1}>
               <AreaChart data={salesData} margin={{ left: 10 }}>
                 <defs>
                   <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
@@ -152,8 +152,8 @@ const Dashboard: React.FC<Props> = ({ state }) => {
 
         <div className="bg-white p-4 lg:p-6 rounded-3xl shadow-sm border border-slate-200 transition-colors">
           <h3 className="text-lg font-bold mb-6 text-slate-800">Supply Distribution</h3>
-          <div className="h-56 lg:h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-56 lg:h-80 w-full min-h-[14rem]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={1}>
               <PieChart>
                 <Pie
                   data={stockDistribution}

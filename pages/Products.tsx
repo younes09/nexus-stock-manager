@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Product, Category } from '../types';
-import { Plus, Edit2, Trash2, Search, X, Scan, Zap, ZapOff, Filter, ChevronDown, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Scan, Zap, ZapOff, ChevronDown, AlertTriangle } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 
 interface Props {

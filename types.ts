@@ -38,6 +38,7 @@ export interface InvoiceItem {
   productName: string;
   quantity: number;
   unitPrice: number;
+  cost: number;
   total: number;
 }
 

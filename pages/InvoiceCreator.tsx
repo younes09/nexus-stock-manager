@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Product, Entity, Invoice, InvoiceItem, InvoiceType } from '../types';
-import { Plus, Trash2, Printer, Save, ChevronLeft, Search, FileText, AlertCircle, Scan, X, Zap, ZapOff } from 'lucide-react';
+import { Plus, Trash2, Printer, Save, ChevronLeft, FileText, AlertCircle, Scan, X, Zap, ZapOff } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 
 interface Props {
@@ -140,6 +140,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
           productName: product.name,
           quantity: 1,
           unitPrice: invoiceType === 'sale' ? product.price : product.cost,
+          cost: product.cost,
           total: invoiceType === 'sale' ? product.price : product.cost
         };
         setItems([...items, newItem]);
@@ -150,7 +151,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
   };
 
   const addItem = () => {
-    setItems([...items, { productId: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }]);
+    setItems([...items, { productId: '', productName: '', quantity: 1, unitPrice: 0, cost: 0, total: 0 }]);
   };
 
   const removeItem = (idx: number) => {
@@ -167,6 +168,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
         item.productId = value;
         item.productName = prod.name;
         item.unitPrice = invoiceType === 'sale' ? prod.price : prod.cost;
+        item.cost = prod.cost;
       }
     } else if (field === 'quantity') {
       item.quantity = Number(value);

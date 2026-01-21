@@ -7,7 +7,6 @@ import {
   Users, 
   Truck, 
   Plus, 
-  Search, 
   AlertTriangle,
   FileText,
   Menu,
@@ -136,7 +135,9 @@ const App: React.FC = () => {
             ...item,
             productId: item.product_id,
             productName: item.product_name,
-            unitPrice: item.unit_price
+            unitPrice: item.unit_price,
+            cost: item.cost || 0,
+            total: item.total
           })) || []
         })) || [],
       }));
@@ -168,10 +169,12 @@ const App: React.FC = () => {
     if (!isSupabaseConfigured || !supabase) return;
     setIsSyncing(true);
     try {
-      const { id, ...newProduct } = p;
-      const dbProduct = { ...newProduct, min_stock: p.minStock, expiry_date: p.expiryDate || null };
-      // @ts-ignore
-      delete dbProduct.minStock; delete dbProduct.expiryDate;
+      const { id, minStock, expiryDate, ...otherProps } = p;
+      const dbProduct = { 
+        ...otherProps, 
+        min_stock: minStock, 
+        expiry_date: expiryDate || null 
+      };
 
       const { error } = await supabase.from('products').insert([dbProduct]);
       if (error) throw error;
@@ -188,9 +191,12 @@ const App: React.FC = () => {
     if (!isSupabaseConfigured || !supabase) return;
     setIsSyncing(true);
     try {
-      const dbProduct = { ...p, min_stock: p.minStock, expiry_date: p.expiryDate || null };
-      // @ts-ignore
-      delete dbProduct.minStock; delete dbProduct.expiryDate;
+      const { minStock, expiryDate, ...otherProps } = p;
+      const dbProduct = { 
+        ...otherProps, 
+        min_stock: minStock, 
+        expiry_date: expiryDate || null 
+      };
 
       const { error } = await supabase.from('products').update(dbProduct).eq('id', p.id);
       if (error) throw error;
@@ -343,10 +349,13 @@ const App: React.FC = () => {
     if (isSupabaseConfigured && supabase) {
       setIsSyncing(true);
       try {
-        const { items, id, ...header } = inv;
-        const dbHeader = { ...header, entity_id: inv.entityId, entity_name: inv.entityName, paid_amount: inv.paidAmount };
-        // @ts-ignore
-        delete dbHeader.entityId; delete dbHeader.entityName; delete dbHeader.paidAmount;
+        const { items, id, entityId, entityName, paidAmount, ...header } = inv;
+        const dbHeader = { 
+          ...header, 
+          entity_id: entityId, 
+          entity_name: entityName, 
+          paid_amount: paidAmount 
+        };
 
         const { data: invData, error: invError } = await supabase.from('invoices').insert([dbHeader]).select();
         if (invError) throw invError;
@@ -357,6 +366,7 @@ const App: React.FC = () => {
           product_name: item.productName,
           quantity: item.quantity,
           unit_price: item.unitPrice,
+          cost: item.cost,
           total: item.total
         }));
         

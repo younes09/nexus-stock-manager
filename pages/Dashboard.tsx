@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart, Pie, Cell 
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Package, BrainCircuit, AlertCircle, ShieldAlert, Wallet, Activity, CalendarOff } from 'lucide-react';
+import { TrendingUp, Activity, CalendarOff, BrainCircuit, ShieldAlert, Package, Layers } from 'lucide-react';
 import { getStockInsights } from '../geminiService';
 
 interface Props {
@@ -30,8 +30,7 @@ const Dashboard: React.FC<Props> = ({ state }) => {
     let cogs = 0;
     state.invoices.filter(i => i.type === 'sale').forEach(inv => {
       inv.items.forEach(item => {
-        const prod = state.products.find(p => p.id === item.productId);
-        if (prod) cogs += (prod.cost * item.quantity);
+        cogs += (item.cost * item.quantity);
       });
     });
 

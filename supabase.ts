@@ -47,7 +47,6 @@ export const supabase = isSupabaseConfigured
  *   entity_id UUID REFERENCES entities(id),
  *   entity_name TEXT NOT NULL,
  *   subtotal NUMERIC NOT NULL,
- *   tax NUMERIC NOT NULL,
  *   total NUMERIC NOT NULL,
  *   status TEXT DEFAULT 'paid'
  * );
@@ -59,6 +58,7 @@ export const supabase = isSupabaseConfigured
  *   product_name TEXT NOT NULL,
  *   quantity INT NOT NULL,
  *   unit_price NUMERIC NOT NULL,
+ *   cost NUMERIC NOT NULL,
  *   total NUMERIC NOT NULL
  * );
  */

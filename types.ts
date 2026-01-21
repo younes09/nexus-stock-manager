@@ -56,13 +56,6 @@ export interface Invoice {
   paidAmount: number;
   status: 'draft' | 'paid' | 'pending';
 }
-export interface SyncTask {
-  id: string;
-  type: 'product' | 'category' | 'entity' | 'invoice';
-  action: 'insert' | 'update' | 'delete';
-  payload: any;
-  timestamp: number;
-}
 
 export interface AppState {
   products: Product[];
@@ -70,6 +63,4 @@ export interface AppState {
   invoices: Invoice[];
   categories: Category[];
   user: User | null;
-  syncQueue: SyncTask[];
-  isOnline: boolean;
 }

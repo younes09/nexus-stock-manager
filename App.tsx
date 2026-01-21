@@ -14,10 +14,7 @@ import {
   X,
   Stethoscope,
   Layers,
-  LogOut,
-  RefreshCcw,
-  Cloud,
-  Database
+  LogOut
 } from 'lucide-react';
 import { Product, Entity, Invoice, AppState, Category, User as UserType } from './types';
 import Dashboard from './pages/Dashboard';
@@ -30,50 +27,17 @@ import InvoiceDetail from './pages/InvoiceDetail';
 import LoginPage from './pages/Login';
 import { supabase, isSupabaseConfigured } from './supabase';
 
-const STORAGE_KEY = 'dentastock_nexus_full_data';
+
 
 const INITIAL_DATA: AppState = {
-  products: [
-    { id: '1', name: 'Composite Resin (A2 Shade)', sku: 'COMP-A2', category: 'Consumables', price: 8500, cost: 4500, stock: 24, minStock: 10 },
-    { id: '2', name: 'Alginate Impression (Fast Set)', sku: 'ALG-FS', category: 'Prosthodontics', price: 3500, cost: 1800, stock: 8, minStock: 15 },
-  ],
-  entities: [
-    { id: 'e1', name: 'City Dental Clinic', type: 'client', email: 'billing@citydental.com', phone: '555-0123', address: '789 Medical Plaza' },
-  ],
+  products: [],
+  entities: [],
   invoices: [],
-  categories: [
-    { id: 'c1', name: 'Consumables' },
-    { id: 'c4', name: 'Prosthodontics' }
-  ],
+  categories: [],
   user: null,
-  syncQueue: [],
-  isOnline: navigator.onLine
 };
 
-const SyncIndicator: React.FC<{ isSyncing: boolean; isSupabaseConfigured: boolean; isOnline: boolean; pendingCount: number; onClear?: () => void; className?: string }> = ({ isSyncing, isSupabaseConfigured, isOnline, pendingCount, onClear, className }) => (
-  <div className={`flex items-center gap-2 ${className}`}>
-    {isSyncing && (
-      <div className="bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 animate-in slide-in-from-right duration-300">
-        <RefreshCcw size={12} className="animate-spin text-indigo-600" />
-        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Updating...</span>
-      </div>
-    )}
-    {pendingCount > 0 && (
-      <button onClick={onClear} className="bg-amber-500 text-white px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 animate-pulse hover:bg-amber-600 transition-colors" title="Click to clear stuck tasks">
-        <RefreshCcw size={12} />
-        <span className="text-[9px] font-black uppercase tracking-widest">{pendingCount} Pending</span>
-      </button>
-    )}
-    <div className={`px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border ${
-      isSupabaseConfigured ? (isOnline ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-rose-50 border-rose-100 text-rose-600') : 'bg-amber-50 border-amber-100 text-amber-600'
-    }`}>
-      {isSupabaseConfigured ? <Cloud size={12} /> : <Database size={12} />}
-      <span className="text-[9px] font-black uppercase tracking-widest">
-        {isSupabaseConfigured ? (isOnline ? 'Cloud On' : 'Offline') : 'Local'}
-      </span>
-    </div>
-  </div>
-);
+
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(INITIAL_DATA);
@@ -85,21 +49,8 @@ const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Load local state initially & Auth
+  // Auth & Realtime Setup
   useEffect(() => {
-    const savedState = localStorage.getItem(STORAGE_KEY);
-    if (savedState) {
-      const parsed = JSON.parse(savedState);
-      setState(prev => ({ ...prev, ...parsed, user: null }));
-    }
-    
-    // Online/Offline detection
-    const handleStatusChange = () => {
-      setState(prev => ({ ...prev, isOnline: navigator.onLine }));
-    };
-    window.addEventListener('online', handleStatusChange);
-    window.addEventListener('offline', handleStatusChange);
-
     if (isSupabaseConfigured && supabase) {
       // 1. Initial Auth Check
       supabase.auth.getSession().then(({ data: { session } }) => {
@@ -143,29 +94,13 @@ const App: React.FC = () => {
         .subscribe();
 
       return () => {
-        window.removeEventListener('online', handleStatusChange);
-        window.removeEventListener('offline', handleStatusChange);
         authSub.unsubscribe();
         supabase.removeChannel(channel);
       };
     } else {
       setIsLoading(false);
-      return () => {
-        window.removeEventListener('online', handleStatusChange);
-        window.removeEventListener('offline', handleStatusChange);
-      };
     }
   }, []);
-
-  // Sync state to local storage whenever it changes (fallback)
-  useEffect(() => {
-    if (state.user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        ...state,
-        user: null // Don't store user in the main data blob for security
-      }));
-    }
-  }, [state]);
 
   const fetchData = async (silent = false) => {
     if (!isSupabaseConfigured || !supabase) return;
@@ -226,187 +161,45 @@ const App: React.FC = () => {
     }
   };
 
-  // --- Sync Logic ---
-
-  const queueTask = (task: any) => {
-    setState(prev => ({ ...prev, syncQueue: [...prev.syncQueue, task] }));
-  };
-
-  const processSyncQueue = async () => {
-    if (!state.isOnline || !isSupabaseConfigured || !supabase || state.syncQueue.length === 0) return;
-    
-    setIsSyncing(true);
-    const queue = [...state.syncQueue];
-    const successes: string[] = [];
-
-    for (const task of queue) {
-      try {
-        let error = null;
-        if (task.type === 'product') {
-          if (task.action === 'insert') {
-            const { id, ...p } = task.payload;
-            const dbProduct = { ...p, min_stock: p.minStock, expiry_date: p.expiryDate || null };
-            // @ts-ignore
-            delete dbProduct.minStock; delete dbProduct.expiryDate;
-            const { error: err } = await supabase.from('products').insert([dbProduct]);
-            error = err;
-          } else if (task.action === 'update') {
-            const { id, ...p } = task.payload;
-            const dbProduct = { ...p, min_stock: p.minStock, expiry_date: p.expiryDate || null };
-            // @ts-ignore
-            delete dbProduct.minStock; delete dbProduct.expiryDate;
-            const { error: err } = await supabase.from('products').update(dbProduct).eq('id', task.payload.id);
-            error = err;
-          } else if (task.action === 'delete') {
-            const { error: err } = await supabase.from('products').delete().eq('id', task.payload.id);
-            error = err;
-          }
-        }
-        // Similar blocks for category, entity, invoice...
-        else if (task.type === 'category') {
-           if (task.action === 'insert') {
-             const { id, ...c } = task.payload;
-             const { error: err } = await supabase.from('categories').insert([c]);
-             error = err;
-           } else if (task.action === 'update') {
-             const { error: err } = await supabase.from('categories').update(task.payload).eq('id', task.payload.id);
-             error = err;
-           } else if (task.action === 'delete') {
-             const { error: err } = await supabase.from('categories').delete().eq('id', task.payload.id);
-             error = err;
-           }
-        }
-        else if (task.type === 'entity') {
-           if (task.action === 'insert') {
-             const { id, ...e } = task.payload;
-             const { error: err } = await supabase.from('entities').insert([e]);
-             error = err;
-           } else if (task.action === 'update') {
-             const { error: err } = await supabase.from('entities').update(task.payload).eq('id', task.payload.id);
-             error = err;
-           } else if (task.action === 'delete') {
-             const { error: err } = await supabase.from('entities').delete().eq('id', task.payload.id);
-             error = err;
-           }
-        }
-        else if (task.type === 'invoice') {
-           if (task.action === 'insert') {
-             const inv = task.payload;
-             const { items, id, ...header } = inv;
-             const dbHeader = { ...header, entity_id: inv.entityId, entity_name: inv.entityName, paid_amount: inv.paidAmount };
-             // @ts-ignore
-             delete dbHeader.entityId; delete dbHeader.entityName; delete dbHeader.paidAmount;
-
-             const { data: invData, error: invError } = await supabase.from('invoices').insert([dbHeader]).select();
-             if (invError) { error = invError; }
-             else {
-               const itemsToInsert = items.map((item: any) => ({
-                 invoice_id: invData[0].id,
-                 product_id: item.productId,
-                 product_name: item.productName,
-                 quantity: item.quantity,
-                 unit_price: item.unitPrice,
-                 total: item.total
-               }));
-               const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
-               error = itemsError;
-             }
-           }
-        }
-        
-        if (!error) successes.push(task.id);
-      } catch (err) {
-        console.error('Failed to sync task:', task, err);
-      }
-    }
-
-    setState(prev => ({
-      ...prev,
-      syncQueue: prev.syncQueue.filter(t => !successes.includes(t.id))
-    }));
-    
-    if (successes.length > 0) fetchData(true); // Silent refresh
-    setIsSyncing(false);
-  };
-
-  // Process queue when online status changes
-  useEffect(() => {
-    if (state.isOnline) processSyncQueue();
-  }, [state.isOnline]);
-
-  // Process queue when new tasks are added (debounced)
-  useEffect(() => {
-    if (state.syncQueue.length > 0 && state.isOnline && !isSyncing) {
-      const timer = setTimeout(() => processSyncQueue(), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [state.syncQueue.length, state.isOnline]);
-
-  // Periodic retry for stuck tasks (every 30 seconds)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (state.syncQueue.length > 0 && state.isOnline && !isSyncing) {
-        processSyncQueue();
-      }
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [state.syncQueue.length, state.isOnline, isSyncing]);
 
   // --- Storage Mutators ---
 
   const addProduct = async (p: Product) => {
-    // Local update first for immediate UI response
-    setState(prev => ({ ...prev, products: [...prev.products, p] }));
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { id, ...newProduct } = p;
+      const dbProduct = { ...newProduct, min_stock: p.minStock, expiry_date: p.expiryDate || null };
+      // @ts-ignore
+      delete dbProduct.minStock; delete dbProduct.expiryDate;
 
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { id, ...newProduct } = p;
-        const dbProduct = { ...newProduct, min_stock: p.minStock, expiry_date: p.expiryDate || null };
-        // @ts-ignore
-        delete dbProduct.minStock; delete dbProduct.expiryDate;
-
-        const { data, error } = await supabase.from('products').insert([dbProduct]).select();
-        if (error) throw error;
-        
-        if (data) {
-          const mappedProduct = { ...data[0], minStock: data[0].min_stock, expiryDate: data[0].expiry_date };
-          setState(prev => ({ 
-            ...prev, 
-            products: prev.products.map(item => item.id === p.id ? mappedProduct : item) 
-          }));
-        }
-      } catch (err) {
-        console.error('Cloud Save Failed, Queuing:', err);
-        queueTask({ id: Date.now().toString(), type: 'product', action: 'insert', payload: p, timestamp: Date.now() });
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'product', action: 'insert', payload: p, timestamp: Date.now() });
+      const { error } = await supabase.from('products').insert([dbProduct]);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to add product:', err);
+      alert('Failed to add product. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const updateProduct = async (p: Product) => {
-    setState(prev => ({ ...prev, products: prev.products.map(item => item.id === p.id ? p : item) }));
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const dbProduct = { ...p, min_stock: p.minStock, expiry_date: p.expiryDate || null };
+      // @ts-ignore
+      delete dbProduct.minStock; delete dbProduct.expiryDate;
 
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const dbProduct = { ...p, min_stock: p.minStock, expiry_date: p.expiryDate || null };
-        // @ts-ignore
-        delete dbProduct.minStock; delete dbProduct.expiryDate;
-
-        const { error } = await supabase.from('products').update(dbProduct).eq('id', p.id);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Cloud Update Failed, Queuing:', err);
-        queueTask({ id: Date.now().toString(), type: 'product', action: 'update', payload: p, timestamp: Date.now() });
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'product', action: 'update', payload: p, timestamp: Date.now() });
+      const { error } = await supabase.from('products').update(dbProduct).eq('id', p.id);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to update product:', err);
+      alert('Failed to update product. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -414,151 +207,120 @@ const App: React.FC = () => {
     // Check if product is in use
     const isUsed = state.invoices.some(inv => inv.items.some(item => item.productId === id));
     if (isUsed) {
-      alert("Cannot delete this product because it is part of existing invoices. This is to ensure data integrity.");
+      alert("Cannot delete this product because it is part of existing invoices.");
       return;
     }
 
-    setState(prev => ({ ...prev, products: prev.products.filter(p => p.id !== id) }));
-
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { error } = await supabase.from('products').delete().eq('id', id);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Cloud Delete Failed, Queuing:', err);
-        // Only queue if it's NOT a constraint violation (23503)
-        // @ts-ignore
-        if (err.code !== '23503') {
-           queueTask({ id: Date.now().toString(), type: 'product', action: 'delete', payload: { id }, timestamp: Date.now() });
-        } else {
-           alert("Unable to delete from cloud: Product is in use.");
-           // Revert local state
-           fetchData(true);
-        }
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'product', action: 'delete', payload: { id }, timestamp: Date.now() });
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      alert('Failed to delete product. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const addEntity = async (e: Entity) => {
-    setState(prev => ({ ...prev, entities: [...prev.entities, e] }));
-
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { id, ...newEntity } = e;
-        const { data, error } = await supabase.from('entities').insert([newEntity]).select();
-        if (error) throw error;
-        if (data) setState(prev => ({ ...prev, entities: prev.entities.map(item => item.id === e.id ? (data[0] as Entity) : item) }));
-      } catch (err) {
-        console.error('Cloud Entity Add Failed:', err);
-        queueTask({ id: Date.now().toString(), type: 'entity', action: 'insert', payload: e, timestamp: Date.now() });
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'entity', action: 'insert', payload: e, timestamp: Date.now() });
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { id, ...newEntity } = e;
+      const { error } = await supabase.from('entities').insert([newEntity]);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to add entity:', err);
+      alert('Failed to add client/supplier. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const updateEntity = async (e: Entity) => {
-    setState(prev => ({ ...prev, entities: prev.entities.map(item => item.id === e.id ? e : item) }));
-
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { error } = await supabase.from('entities').update(e).eq('id', e.id);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Cloud Entity Update Failed:', err);
-        queueTask({ id: Date.now().toString(), type: 'entity', action: 'update', payload: e, timestamp: Date.now() });
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'entity', action: 'update', payload: e, timestamp: Date.now() });
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { error } = await supabase.from('entities').update(e).eq('id', e.id);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to update entity:', err);
+      alert('Failed to update client/supplier. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const deleteEntity = async (id: string) => {
-    setState(prev => ({ ...prev, entities: prev.entities.filter(e => e.id !== id) }));
+    // Check if entity is in use
+    const isUsed = state.invoices.some(inv => inv.entityId === id);
+    if (isUsed) {
+      alert("Cannot delete this client/supplier because they have associated invoices.");
+      return;
+    }
 
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { error } = await supabase.from('entities').delete().eq('id', id);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Cloud Entity Delete Failed:', err);
-        queueTask({ id: Date.now().toString(), type: 'entity', action: 'delete', payload: { id }, timestamp: Date.now() });
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'entity', action: 'delete', payload: { id }, timestamp: Date.now() });
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { error } = await supabase.from('entities').delete().eq('id', id);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to delete entity:', err);
+      alert('Failed to delete client/supplier. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const addCategory = async (c: Category) => {
-    setState(prev => ({ ...prev, categories: [...prev.categories, c] }));
-
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { id, ...newCategory } = c;
-        const { data, error } = await supabase.from('categories').insert([newCategory]).select();
-        if (error) throw error;
-        if (data) setState(prev => ({ ...prev, categories: prev.categories.map(item => item.id === c.id ? data[0] : item) }));
-      } catch (err) {
-        console.error('Cloud Category Add Failed:', err);
-        queueTask({ id: Date.now().toString(), type: 'category', action: 'insert', payload: c, timestamp: Date.now() });
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'category', action: 'insert', payload: c, timestamp: Date.now() });
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { id, ...newCategory } = c;
+      const { error } = await supabase.from('categories').insert([newCategory]);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to add category:', err);
+      alert('Failed to add category. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const updateCategory = async (c: Category) => {
-    setState(prev => ({ ...prev, categories: prev.categories.map(item => item.id === c.id ? c : item) }));
-
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { error } = await supabase.from('categories').update(c).eq('id', c.id);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Cloud Category Update Failed:', err);
-        queueTask({ id: Date.now().toString(), type: 'category', action: 'update', payload: c, timestamp: Date.now() });
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'category', action: 'update', payload: c, timestamp: Date.now() });
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { error } = await supabase.from('categories').update(c).eq('id', c.id);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to update category:', err);
+      alert('Failed to update category. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const deleteCategory = async (id: string) => {
-    setState(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }));
-
-    if (state.isOnline && isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { error } = await supabase.from('categories').delete().eq('id', id);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Cloud Category Delete Failed:', err);
-        queueTask({ id: Date.now().toString(), type: 'category', action: 'delete', payload: { id }, timestamp: Date.now() });
-      } finally {
-        setIsSyncing(false);
-      }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'category', action: 'delete', payload: { id }, timestamp: Date.now() });
+    if (!isSupabaseConfigured || !supabase) return;
+    setIsSyncing(true);
+    try {
+      const { error } = await supabase.from('categories').delete().eq('id', id);
+      if (error) throw error;
+      await fetchData(true);
+    } catch (err) {
+      console.error('Failed to delete category:', err);
+      alert('Failed to delete category. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -578,7 +340,7 @@ const App: React.FC = () => {
       products: updatedProducts
     }));
 
-    if (state.isOnline && isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase) {
       setIsSyncing(true);
       try {
         const { items, id, ...header } = inv;
@@ -608,14 +370,12 @@ const App: React.FC = () => {
             await supabase.from('products').update({ stock: prod.stock }).eq('id', prod.id);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Invoice Cloud Save Failed:', error);
-        queueTask({ id: Date.now().toString(), type: 'invoice', action: 'insert', payload: inv, timestamp: Date.now() });
+        alert(`Failed to save invoice to cloud: ${error?.message || 'Unknown error'}`);
       } finally {
         setIsSyncing(false);
       }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'invoice', action: 'insert', payload: inv, timestamp: Date.now() });
     }
   };
 
@@ -625,7 +385,7 @@ const App: React.FC = () => {
       invoices: prev.invoices.map(i => i.id === inv.id ? inv : i) 
     }));
 
-    if (state.isOnline && isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase) {
       setIsSyncing(true);
       try {
         const { items, ...header } = inv;
@@ -641,14 +401,12 @@ const App: React.FC = () => {
         };
         const { error } = await supabase.from('invoices').update(dbHeader).eq('id', inv.id);
         if (error) throw error;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Invoice Cloud Update Failed:', error);
-        queueTask({ id: Date.now().toString(), type: 'invoice', action: 'update', payload: inv, timestamp: Date.now() });
+        alert(`Failed to update invoice in cloud: ${error?.message || 'Unknown error'}`);
       } finally {
         setIsSyncing(false);
       }
-    } else if (isSupabaseConfigured) {
-      queueTask({ id: Date.now().toString(), type: 'invoice', action: 'update', payload: inv, timestamp: Date.now() });
     }
   };
 
@@ -710,12 +468,7 @@ const App: React.FC = () => {
           <span className="font-bold text-lg">DentaStock</span>
         </div>
         <div className="flex items-center gap-2">
-          <SyncIndicator 
-            isSyncing={isSyncing} 
-            isSupabaseConfigured={isSupabaseConfigured} 
-            isOnline={state.isOnline} 
-            pendingCount={state.syncQueue.length} 
-          />
+
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 hover:bg-white/10 rounded-lg">
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -766,13 +519,7 @@ const App: React.FC = () => {
       <main id="root-main" className="flex-grow flex flex-col min-w-0 min-h-screen">
         <header className="hidden lg:flex h-16 bg-white border-b border-slate-200 items-center justify-end px-8 no-print sticky top-0 z-20">
           <div className="flex items-center gap-4">
-            <SyncIndicator 
-                isSyncing={isSyncing} 
-                isSupabaseConfigured={isSupabaseConfigured} 
-                isOnline={state.isOnline} 
-                pendingCount={state.syncQueue.length} 
-                onClear={() => setState(prev => ({ ...prev, syncQueue: [] }))}
-            />
+
             <div className="relative">
               <button 
                 onClick={() => setIsAlertsOpen(!isAlertsOpen)}

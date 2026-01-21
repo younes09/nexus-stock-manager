@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Product, Entity, Invoice, InvoiceItem, InvoiceType } from '../types';
 import { Plus, Trash2, Printer, Save, ChevronLeft, FileText, AlertCircle, Scan, X, Zap, ZapOff } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { useLanguage } from '../LanguageContext';
 
 interface Props {
   products: Product[];
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
+  const { t } = useLanguage();
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
   const invoiceType = (type === 'purchase' ? 'purchase' : 'sale') as InvoiceType;
@@ -95,7 +97,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
         }
       } catch (err) {
         console.error("Camera access failed", err);
-        alert("Could not access camera. Please check permissions.");
+        alert(t('invoiceCreator.cameraAccessFailed'));
         setIsScanning(false);
       }
     }, 100);
@@ -146,7 +148,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
         setItems([...items, newItem]);
       }
     } else {
-      alert(`Product with SKU "${sku}" not found in inventory.`);
+      alert(t('invoiceCreator.scannedProductNotFound').replace('{sku}', sku));
     }
   };
 
@@ -183,7 +185,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
 
   const handleSave = () => {
     if (!selectedEntityId || items.length === 0 || items.some(i => !i.productId)) {
-      alert("Please ensure an entity is selected and at least one product is added.");
+      alert(t('common.entities') + " & " + t('common.products') + " " + t('common.loading'));
       return;
     }
 
@@ -212,16 +214,16 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
       <div className="no-print flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 font-bold hover:text-slate-800 transition-colors">
           <ChevronLeft size={20} />
-          Back
+          {t('common.back')}
         </button>
         <div className="flex gap-2 lg:gap-3">
           <button onClick={() => window.print()} className="hidden sm:flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-2xl font-bold hover:bg-slate-50">
             <Printer size={18} />
-            Print
+            {t('common.print')}
           </button>
           <button onClick={handleSave} className="flex items-center gap-2 px-6 lg:px-8 py-3.5 lg:py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-500/30">
             <Save size={18} />
-            Post {invoiceType === 'sale' ? 'Sale' : 'Order'}
+            {invoiceType === 'sale' ? t('invoiceCreator.postSale') : t('invoiceCreator.postOrder')}
           </button>
         </div>
       </div>
@@ -247,7 +249,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
             </div>
             <div className="w-full max-w-md space-y-8 text-center">
               <div className="space-y-2">
-                <h3 className="text-2xl font-black text-white">Scan Barcode</h3>
+                <h3 className="text-2xl font-black text-white">{t('invoiceCreator.scanBarcode')}</h3>
                 <p className="text-slate-400 text-sm font-medium">Align the product SKU within the box</p>
               </div>
               <div id="reader" className="overflow-hidden bg-slate-800 rounded-[2rem] aspect-square shadow-2xl border-4 border-indigo-500/30"></div>
@@ -265,7 +267,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
               <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-500/20">
                 <FileText size={24} />
               </div>
-              <h1 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Invoice System</h1>
+              <h1 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">{t('invoiceCreator.system')}</h1>
             </div>
             <div className="space-y-1 text-slate-500 text-xs font-bold uppercase tracking-wider">
               <p>Corporate Headquarters</p>
@@ -299,7 +301,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
                 onChange={(e) => setSelectedEntityId(e.target.value)}
                 className="w-full text-xl font-black text-slate-900 bg-slate-50 rounded-2xl border-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer py-4 px-5 appearance-none shadow-sm"
               >
-                <option value="">Choose {invoiceType === 'sale' ? 'Client' : 'Supplier'}...</option>
+                <option value="">{t('invoiceCreator.chooseEntity').replace('{type}', invoiceType === 'sale' ? t('common.clients') : t('common.suppliers'))}</option>
                 {filteredEntities.map(e => (
                   <option key={e.id} value={e.id}>{e.name}</option>
                 ))}
@@ -326,10 +328,10 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
 
         <div className="space-y-6 lg:space-y-0">
           <div className="hidden lg:grid grid-cols-12 gap-4 border-b-2 border-slate-900 pb-4 mb-4">
-            <div className="col-span-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Product / Item</div>
-            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Quantity</div>
-            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Unit Price</div>
-            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Row Total</div>
+            <div className="col-span-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoiceCreator.productItem')}</div>
+            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{t('invoiceCreator.quantity')}</div>
+            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t('invoiceCreator.unitPrice')}</div>
+            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t('invoiceCreator.lineTotal')}</div>
             <div className="col-span-1"></div>
           </div>
 
@@ -350,7 +352,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
                     onChange={(e) => updateItem(idx, 'productId', e.target.value)}
                     className="w-full bg-white lg:bg-slate-50 border-none rounded-2xl font-black text-slate-900 py-3.5 px-5 focus:ring-4 focus:ring-indigo-500/10 shadow-sm"
                   >
-                    <option value="">Select Product...</option>
+                    <option value="">{t('invoiceCreator.addProduct')}</option>
                     {products.map(p => (
                       <option key={p.id} value={p.id}>{p.name} ({p.sku}) • Stock: {p.stock}</option>
                     ))}
@@ -358,7 +360,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
                 </div>
 
                 <div className="lg:col-span-2 flex flex-col items-center">
-                  <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block w-full text-center">Quantity</label>
+                  <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block w-full text-center">{t('invoiceCreator.quantity')}</label>
                   <input 
                     type="number" 
                     min="1"
@@ -369,7 +371,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
                 </div>
 
                 <div className="lg:col-span-2">
-                  <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block text-right">Price (DA)</label>
+                  <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block text-right">{t('invoiceCreator.unitPrice')}</label>
                   <input 
                     type="number" 
                     step="0.01"
@@ -380,7 +382,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
                 </div>
 
                 <div className="lg:col-span-2 text-right flex flex-col justify-center">
-                  <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block">Line Total</label>
+                  <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block">{t('invoiceCreator.lineTotal')}</label>
                   <div className="text-xl lg:text-lg font-black text-slate-900 pr-2">
                     {item.total.toLocaleString()} DA
                   </div>
@@ -402,7 +404,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
             className="flex-grow flex items-center justify-center gap-3 border-4 border-dashed border-slate-100 text-slate-300 py-6 lg:py-8 rounded-[2.5rem] hover:border-indigo-200 hover:text-indigo-400 hover:bg-indigo-50/50 transition-all font-black uppercase text-xs tracking-widest no-print"
           >
             <Plus size={24} />
-            Manual Entry
+            {t('invoiceCreator.manualEntry')}
           </button>
           
           <button 
@@ -410,7 +412,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
             className="flex-grow flex items-center justify-center gap-3 border-4 border-dashed border-indigo-100 text-indigo-300 py-6 lg:py-8 rounded-[2.5rem] hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50 transition-all font-black uppercase text-xs tracking-widest no-print"
           >
             <Scan size={24} />
-            Scan Barcode
+            {t('invoiceCreator.scanBarcode')}
           </button>
         </div>
 
@@ -418,21 +420,21 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
           <div className="flex-grow flex items-start gap-3 bg-amber-50 p-6 rounded-3xl border border-amber-100">
             <AlertCircle className="text-amber-500 flex-shrink-0" size={20} />
             <div className="text-xs text-amber-800 font-bold leading-relaxed">
-              Verify stock levels before posting. This action updates permanent inventory records and cannot be undone via this dashboard.
+              {t('invoiceCreator.verifyNotice')}
             </div>
           </div>
 
           <div className="w-full lg:w-96 space-y-5 bg-slate-50 p-8 rounded-[2.5rem]">
             <div className="flex justify-between text-slate-500 font-bold text-sm">
-              <span>Subtotal</span>
+              <span>{t('invoiceCreator.subtotal')}</span>
               <span className="text-slate-900">{subtotal.toLocaleString()} DA</span>
             </div>
             <div className="flex justify-between items-center pt-6 border-t border-slate-200">
-              <span className="text-lg font-black text-slate-900 uppercase tracking-tight">Net Payable</span>
+              <span className="text-lg font-black text-slate-900 uppercase tracking-tight">{t('invoiceCreator.netPayable')}</span>
               <span className="text-2xl lg:text-3xl font-black text-indigo-600">{total.toLocaleString()} DA</span>
             </div>
             <div className="pt-6 space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount Paid Today (DA)</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoiceCreator.amountPaid')}</label>
               <input 
                 type="number" 
                 value={paidAmount}
@@ -441,7 +443,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
               />
               {paidAmount < total && (
                 <div className="text-right text-[10px] font-bold text-rose-500 uppercase tracking-widest">
-                  Remaining Debt: {(total - paidAmount).toLocaleString()} DA
+                  {t('invoiceCreator.remainingDebt')}: {(total - paidAmount).toLocaleString()} DA
                 </div>
               )}
             </div>

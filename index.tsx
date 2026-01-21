@@ -2,6 +2,7 @@ import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
+import { LanguageProvider } from './LanguageContext';
 import App from './App';
 
 const rootElement = document.getElementById('root');
@@ -13,7 +14,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <HashRouter>
-      <App />
+      <LanguageProvider>
+        <App />
+      </LanguageProvider>
     </HashRouter>
   </React.StrictMode>
 );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Stethoscope, Lock, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 import { User as UserType } from '../types';
 import { supabase, isSupabaseConfigured } from '../supabase';
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 const LoginPage: React.FC<Props> = ({ onLogin }) => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,7 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
     setError('');
 
     if (!isSupabaseConfigured || !supabase) {
-      setError('Cloud authentication is not configured.');
+      setError(t('login.errorConfig'));
       setLoading(false);
       return;
     }
@@ -36,7 +38,7 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
       onLogin({
         id: data.user.id,
         email: data.user.email || '',
-        fullName: data.user.user_metadata?.fullName || data.user.email?.split('@')[0] || 'Medical Officer',
+        fullName: data.user.user_metadata?.fullName || data.user.email?.split('@')[0] || t('common.medicalOfficer'),
         role: data.user.user_metadata?.role || 'authorized'
       });
     }
@@ -57,18 +59,18 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
             <Stethoscope size={48} strokeWidth={1.5} />
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">DentaStock Nexus</h1>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Advanced Clinical Management</p>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">{t('login.clinicalManagement')}</p>
         </div>
 
         <div className="bg-white/80 backdrop-blur-xl border border-white p-8 lg:p-10 rounded-[3rem] shadow-2xl space-y-8">
           <div className="space-y-2">
-            <h2 className="text-xl font-black text-slate-900">Medical Gateway</h2>
-            <p className="text-xs text-slate-400 font-medium">Please authorize your session to access inventory controls.</p>
+            <h2 className="text-xl font-black text-slate-900">{t('login.medicalGateway')}</h2>
+            <p className="text-xs text-slate-400 font-medium">{t('login.subtitle')}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('login.email')}</label>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
                   <Mail size={18} />
@@ -85,7 +87,7 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Secret Key</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('login.secretKey')}</label>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
                   <Lock size={18} />
@@ -116,7 +118,7 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  Establish Connection
+                  {t('login.establishConnection')}
                   <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -125,13 +127,13 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
 
           <div className="text-center">
             <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-              Provide your clinical credentials to establish a secure link.
+              {t('login.credentialsNotice')}
             </p>
           </div>
         </div>
 
         <p className="text-center mt-8 text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] opacity-40">
-          Secured by Nexus Crypto-Layer v4.0.2
+          {t('login.cryptoLayer')}
         </p>
       </div>
     </div>

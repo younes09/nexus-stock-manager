@@ -25,6 +25,7 @@ import CategoriesPage from './pages/Categories';
 import InvoiceDetail from './pages/InvoiceDetail';
 import LoginPage from './pages/Login';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { useLanguage } from './LanguageContext';
 
 
 
@@ -39,6 +40,7 @@ const INITIAL_DATA: AppState = {
 
 
 const App: React.FC = () => {
+  const { t, language, setLanguage } = useLanguage();
   const [state, setState] = useState<AppState>(INITIAL_DATA);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -57,7 +59,7 @@ const App: React.FC = () => {
           const user: UserType = {
             id: session.user.id,
             email: session.user.email || '',
-            fullName: session.user.user_metadata?.fullName || session.user.email?.split('@')[0] || 'Medical Officer',
+            fullName: session.user.user_metadata?.fullName || session.user.email?.split('@')[0] || t('common.medicalOfficer'),
             role: session.user.user_metadata?.role || 'authorized'
           };
           setState(prev => ({ ...prev, user }));
@@ -73,7 +75,7 @@ const App: React.FC = () => {
           const user: UserType = {
             id: session.user.id,
             email: session.user.email || '',
-            fullName: session.user.user_metadata?.fullName || session.user.email?.split('@')[0] || 'Medical Officer',
+            fullName: session.user.user_metadata?.fullName || session.user.email?.split('@')[0] || t('common.medicalOfficer'),
             role: session.user.user_metadata?.role || 'authorized'
           };
           setState(prev => ({ ...prev, user }));
@@ -425,7 +427,7 @@ const App: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">
           <div className="loader mx-auto"></div>
-          <p className="text-slate-500 font-bold animate-pulse">Initializing Persistence...</p>
+          <p className="text-slate-500 font-bold animate-pulse">{t('common.initializingPersistence')}</p>
         </div>
       </div>
     );
@@ -435,29 +437,29 @@ const App: React.FC = () => {
 
   const navGroups = [
     {
-      title: 'Overview',
+      title: t('nav.overview'),
       items: [
-        { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+        { path: '/', label: t('common.dashboard'), icon: <LayoutDashboard size={20} /> },
       ]
     },
     {
-      title: 'Inventory',
+      title: t('nav.inventory'),
       items: [
-        { path: '/products', label: 'Products', icon: <Package size={20} /> },
-        { path: '/categories', label: 'Categories', icon: <Layers size={20} /> },
+        { path: '/products', label: t('common.products'), icon: <Package size={20} /> },
+        { path: '/categories', label: t('common.categories'), icon: <Layers size={20} /> },
       ]
     },
     {
-      title: 'Relations',
+      title: t('nav.relations'),
       items: [
-        { path: '/clients', label: 'Clients', icon: <Users size={20} /> },
-        { path: '/suppliers', label: 'Suppliers', icon: <Truck size={20} /> },
+        { path: '/clients', label: t('common.clients'), icon: <Users size={20} /> },
+        { path: '/suppliers', label: t('common.suppliers'), icon: <Truck size={20} /> },
       ]
     },
     {
-      title: 'Finance',
+      title: t('nav.finance'),
       items: [
-        { path: '/invoices', label: 'Invoices', icon: <FileText size={20} /> },
+        { path: '/invoices', label: t('common.invoices'), icon: <FileText size={20} /> },
       ]
     }
   ];
@@ -515,10 +517,10 @@ const App: React.FC = () => {
 
         <div className="p-4 space-y-3 border-t border-indigo-900">
           <Link to="/invoice/new/sale" className="w-full flex items-center justify-center gap-2 bg-sky-50 text-indigo-950 px-4 py-4 rounded-xl font-bold hover:bg-white shadow-xl">
-            <Plus size={18} /> New Practice Sale
+            <Plus size={18} /> {t('nav.newSale')}
           </Link>
           <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-indigo-400 py-3 rounded-xl font-bold hover:text-white hover:bg-white/5 transition-all text-sm">
-            <LogOut size={16} /> End Session
+            <LogOut size={16} /> {t('nav.endSession')}
           </button>
         </div>
       </aside>
@@ -529,6 +531,12 @@ const App: React.FC = () => {
       <main id="root-main" className="flex-grow flex flex-col min-w-0 min-h-screen">
         <header className="hidden lg:flex h-16 bg-white border-b border-slate-200 items-center justify-end px-8 no-print sticky top-0 z-20">
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
+              className="px-3 py-1.5 rounded-xl bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-colors border border-slate-100"
+            >
+              {language === 'en' ? 'FR' : 'EN'}
+            </button>
 
             <div className="relative">
               <button 
@@ -544,14 +552,14 @@ const App: React.FC = () => {
                   <div className="fixed inset-0 z-30" onClick={() => setIsAlertsOpen(false)} />
                   <div className="absolute right-0 mt-3 w-80 bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 overflow-hidden z-40 animate-in fade-in zoom-in duration-200">
                     <div className="p-4 border-b border-slate-50 flex items-center justify-between">
-                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Low Stock Alerts</h3>
-                      <span className="px-2 py-1 bg-rose-100 text-rose-600 rounded-lg text-[10px] font-black">{state.products.filter(p => p.stock <= p.minStock).length} Items</span>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">{t('dashboard.clinicalAlerts')}</h3>
+                      <span className="px-2 py-1 bg-rose-100 text-rose-600 rounded-lg text-[10px] font-black">{state.products.filter(p => p.stock <= p.minStock).length} {t('common.products')}</span>
                     </div>
                     <div className="max-h-80 overflow-y-auto p-2 space-y-1">
                       {state.products.filter(p => p.stock <= p.minStock).length === 0 ? (
                         <div className="p-8 text-center text-slate-400">
                           <Package size={32} className="mx-auto mb-2 opacity-20" />
-                          <p className="text-xs font-bold">All supplies stocked!</p>
+                          <p className="text-xs font-bold">{t('common.allSuppliesStocked')}</p>
                         </div>
                       ) : (
                         state.products.filter(p => p.stock <= p.minStock).map(p => (
@@ -567,7 +575,7 @@ const App: React.FC = () => {
                                 onClick={() => setIsAlertsOpen(false)}
                                 className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity"
                               >
-                                RESTOCK NOW →
+                                {t('common.add').toUpperCase()} NOW →
                               </Link>
                             </div>
                           </div>

@@ -4,16 +4,15 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart, Pie, Cell 
 } from 'recharts';
-import { TrendingUp, Activity, CalendarOff, BrainCircuit, ShieldAlert, Package, Layers } from 'lucide-react';
-import { getStockInsights } from '../geminiService';
+import { TrendingUp, Activity, CalendarOff, ShieldAlert, Package, Layers } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 interface Props {
   state: AppState;
 }
 
 const Dashboard: React.FC<Props> = ({ state }) => {
-  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
-  const [loadingAi, setLoadingAi] = useState(false);
+  const { t } = useLanguage();
 
   const metrics = useMemo(() => {
     const totalSales = state.invoices
@@ -53,12 +52,7 @@ const Dashboard: React.FC<Props> = ({ state }) => {
     return state.products.slice(0, 5).map(p => ({ name: p.name, stock: p.stock }));
   }, [state.products]);
 
-  const runAiAnalysis = async () => {
-    setLoadingAi(true);
-    const result = await getStockInsights(state.products, state.invoices);
-    setAiAnalysis(result);
-    setLoadingAi(false);
-  };
+
 
   const COLORS = ['#0284c7', '#38bdf8', '#bae6fd', '#0ea5e9', '#0369a1'];
 
@@ -69,59 +63,22 @@ const Dashboard: React.FC<Props> = ({ state }) => {
   return (
     <div className="space-y-6 lg:space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">Practice Overview</h1>
-          <p className="text-sm lg:text-base text-slate-500">Clinical supply levels and operational metrics.</p>
-        </div>
-        <button 
-          onClick={runAiAnalysis}
-          disabled={loadingAi}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-600 text-white px-6 py-3.5 lg:py-3 rounded-2xl font-bold hover:bg-sky-700 transition-all shadow-lg shadow-sky-500/30 disabled:opacity-50"
-        >
-          <BrainCircuit size={20} />
-          {loadingAi ? 'Analyzing Clinical Data...' : 'AI Clinical Insights'}
-        </button>
+        <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">{t('dashboard.overview')}</h1>
+        <p className="text-sm lg:text-base text-slate-500">{t('dashboard.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <StatCard title="Procedure Revenue" value={formatDA(metrics.totalSales)} icon={<TrendingUp size={24} />} trend="+12%" color="bg-emerald-50 text-emerald-600" />
-        <StatCard title="Est. Clinical Profit" value={formatDA(metrics.profit)} icon={<Activity size={24} />} trend="+8.4%" color="bg-indigo-50 text-indigo-600" />
-        <StatCard title="Safety Alerts" value={metrics.expiringCount.toString()} icon={<CalendarOff size={24} />} color={metrics.expiringCount > 0 ? "bg-rose-50 text-rose-600" : "bg-slate-50 text-slate-400"} subValue="Expiring soon" />
-        <StatCard title="Clinical Alerts" value={metrics.lowStockItems.toString()} icon={<ShieldAlert size={24} />} color="bg-amber-50 text-amber-600" subValue={`of ${metrics.totalProducts} lines`} />
+        <StatCard title={t('dashboard.revenue')} value={formatDA(metrics.totalSales)} icon={<TrendingUp size={24} />} trend="+12%" color="bg-emerald-50 text-emerald-600" />
+        <StatCard title={t('dashboard.profit')} value={formatDA(metrics.profit)} icon={<Activity size={24} />} trend="+8.4%" color="bg-indigo-50 text-indigo-600" />
+        <StatCard title={t('dashboard.safetyAlerts')} value={metrics.expiringCount.toString()} icon={<CalendarOff size={24} />} color={metrics.expiringCount > 0 ? "bg-rose-50 text-rose-600" : "bg-slate-50 text-slate-400"} subValue={t('dashboard.expiringSoon')} />
+        <StatCard title={t('dashboard.clinicalAlerts')} value={metrics.lowStockItems.toString()} icon={<ShieldAlert size={24} />} color="bg-amber-50 text-amber-600" subValue={t('dashboard.ofLines').replace('{total}', metrics.totalProducts.toString())} />
       </div>
 
-      {aiAnalysis && (
-        <div className="bg-indigo-950 text-white p-6 lg:p-8 rounded-[2rem] shadow-2xl relative overflow-hidden border border-white/5">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <BrainCircuit className="text-sky-400" />
-                <h2 className="text-lg lg:text-xl font-bold">AI Clinical Analysis</h2>
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-white/10 rounded-full border border-white/10">Gemini 3.0 Engine</span>
-            </div>
-            <p className="text-sky-200 mb-8 max-w-2xl text-sm lg:text-base font-medium leading-relaxed">{aiAnalysis.summary}</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {aiAnalysis.restockSuggestions.map((s: any, i: number) => (
-                <div key={i} className="bg-white/5 p-5 rounded-3xl border border-white/10 backdrop-blur-sm group hover:bg-white/10 transition-colors">
-                  <div className={`text-[10px] font-black mb-2 uppercase tracking-[0.2em] ${
-                    s.priority.toLowerCase() === 'high' ? 'text-rose-400' : 'text-sky-400'
-                  }`}>
-                    {s.priority} PRIORITY
-                  </div>
-                  <div className="font-black text-slate-50 mb-2 group-hover:text-sky-300 transition-colors">{s.product}</div>
-                  <div className="text-xs text-sky-200/60 leading-relaxed font-medium">{s.reason}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full -mr-32 -mt-32 blur-[100px] pointer-events-none"></div>
-        </div>
-      )}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <div className="lg:col-span-2 bg-white p-4 lg:p-6 rounded-3xl shadow-sm border border-slate-200 transition-colors">
-          <h3 className="text-lg font-bold mb-6 text-slate-800">Financial Performance (DA)</h3>
+          <h3 className="text-lg font-bold mb-6 text-slate-800">{t('dashboard.financialPerformance')}</h3>
           <div className="h-64 lg:h-80 w-full min-h-[16rem]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={1}>
               <AreaChart data={salesData} margin={{ left: 10 }}>
@@ -151,7 +108,7 @@ const Dashboard: React.FC<Props> = ({ state }) => {
         </div>
 
         <div className="bg-white p-4 lg:p-6 rounded-3xl shadow-sm border border-slate-200 transition-colors">
-          <h3 className="text-lg font-bold mb-6 text-slate-800">Supply Distribution</h3>
+          <h3 className="text-lg font-bold mb-6 text-slate-800">{t('dashboard.supplyDistribution')}</h3>
           <div className="h-56 lg:h-80 w-full min-h-[14rem]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={1}>
               <PieChart>

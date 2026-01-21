@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Product, Category } from '../types';
 import { Plus, Edit2, Trash2, Search, X, Scan, Zap, ZapOff, ChevronDown, AlertTriangle } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { useLanguage } from '../LanguageContext';
 
 interface Props {
   products: Product[];
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, onDelete }) => {
+  const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -205,15 +207,15 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
     <div className="space-y-6 lg:space-y-8 animate-in fade-in duration-500 pb-24 lg:pb-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">Dental Supplies</h1>
-          <p className="text-sm lg:text-base text-slate-500">Track clinical materials across {products.length} items.</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">{t('products.title')}</h1>
+          <p className="text-sm lg:text-base text-slate-500">{t('products.subtitle').replace('{count}', products.length.toString())}</p>
         </div>
         <button 
           onClick={() => { setEditingProduct(null); setIsModalOpen(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 lg:py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
         >
           <Plus size={20} />
-          Register New Supply
+          {t('products.registerNew')}
         </button>
       </div>
 
@@ -223,7 +225,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
           <input 
             type="text" 
-            placeholder="Search by name or SKU..." 
+            placeholder={t('products.searchPlaceholder')} 
             className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-sm transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -237,7 +239,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"
             >
-              <option value="all">All Categories</option>
+              <option value="all">{t('products.allCategories')}</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.name}>{cat.name}</option>
               ))}
@@ -251,10 +253,10 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
               onChange={(e) => setStockFilter(e.target.value)}
               className="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"
             >
-              <option value="all">Stock Status</option>
-              <option value="in">In Stock</option>
-              <option value="low">Low Stock</option>
-              <option value="out">Out of Stock</option>
+              <option value="all">{t('products.stockStatus')}</option>
+              <option value="in">{t('products.inStock')}</option>
+              <option value="low">{t('products.lowStock')}</option>
+              <option value="out">{t('products.outOfStock')}</option>
             </select>
             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
           </div>
@@ -265,7 +267,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
             onClick={resetFilters}
             className="w-full lg:w-auto px-6 py-3.5 text-rose-500 font-bold text-xs uppercase tracking-widest hover:bg-rose-50 rounded-2xl transition-all flex items-center justify-center gap-2"
           >
-            <X size={16} /> Clear
+            <X size={16} /> {t('common.clear')}
           </button>
         )}
       </div>
@@ -275,7 +277,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
         {filteredProducts.length === 0 ? (
           <div className="bg-white p-12 rounded-[2rem] border-2 border-dashed border-slate-100 text-center flex flex-col items-center gap-4">
             <Search size={48} className="text-slate-200" />
-            <p className="text-slate-400 font-bold">No supplies match your search.</p>
+            <p className="text-slate-400 font-bold">{t('products.noMatch')}</p>
           </div>
         ) : (
           filteredProducts.map(p => {
@@ -300,14 +302,14 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                 
                 <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">Stock Level</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">{t('products.stockLevel')}</span>
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${p.stock <= p.minStock ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></div>
                       <span className={`text-lg font-black ${p.stock <= p.minStock ? 'text-rose-600' : 'text-slate-900'}`}>{p.stock}</span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">Price (DA)</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">{t('common.price')} (DA)</span>
                     <div className="text-lg font-black text-slate-900">{p.price.toLocaleString()} DA</div>
                   </div>
                 </div>
@@ -333,12 +335,12 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
         <table className="w-full text-left">
           <thead className="bg-slate-50/50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
             <tr>
-              <th className="px-8 py-5">Product Info</th>
-              <th className="px-8 py-5">Classification</th>
-              <th className="px-8 py-5">Financials (DA)</th>
-              <th className="px-8 py-5">Inventory</th>
-              <th className="px-8 py-5">Safety / Expiry</th>
-              <th className="px-8 py-5 text-right">Actions</th>
+              <th className="px-8 py-5">{t('products.productInfo')}</th>
+              <th className="px-8 py-5">{t('products.classification')}</th>
+              <th className="px-8 py-5">{t('products.financials')}</th>
+              <th className="px-8 py-5">{t('common.stock')}</th>
+              <th className="px-8 py-5">{t('products.safetyExpiry')}</th>
+              <th className="px-8 py-5 text-right">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -347,7 +349,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                 <td colSpan={6} className="px-8 py-20 text-center">
                   <div className="flex flex-col items-center gap-3 text-slate-300">
                     <Search size={40} />
-                    <p className="font-bold">No results found for current filters.</p>
+                    <p className="font-bold">{t('invoices.noResults')}</p>
                   </div>
                 </td>
               </tr>
@@ -374,7 +376,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                     </td>
                     <td className="px-8 py-5">
                       <div className="text-sm font-black text-slate-900">{p.price.toLocaleString()} DA</div>
-                      <div className="text-[10px] text-slate-400 font-bold">Cost: {p.cost.toLocaleString()} DA</div>
+                      <div className="text-[10px] text-slate-400 font-bold">{t('common.cost')}: {p.cost.toLocaleString()} DA</div>
                     </td>
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
@@ -409,7 +411,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-indigo-950/40 backdrop-blur-md p-0 sm:p-4">
           <div className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
             <div className="sticky top-0 bg-white p-6 lg:p-8 border-b border-slate-100 flex justify-between items-center z-10">
-              <h2 className="text-xl lg:text-2xl font-black text-slate-900">{editingProduct ? 'Update Dental Supply' : 'Register Dental Supply'}</h2>
+              <h2 className="text-xl lg:text-2xl font-black text-slate-900">{editingProduct ? t('products.updateTitle') : t('products.registerTitle')}</h2>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full"><X size={20} /></button>
             </div>
             
@@ -421,7 +423,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                   {cameraPermission === 'prompt' && (
                     <div className="text-center p-6 space-y-3">
                       <div className="loader mx-auto border-t-indigo-400"></div>
-                      <p className="text-white text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">Requesting Camera...</p>
+                      <p className="text-white text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">{t('products.requestingCamera')}</p>
                     </div>
                   )}
 
@@ -431,15 +433,15 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                         <Scan size={24} />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-white text-sm font-black uppercase tracking-tight">Access Restricted</p>
-                        <p className="text-white/50 text-[10px] leading-relaxed max-w-[220px] mx-auto font-medium">Please check browser permissions. Note: Mobile camera scanning requires a **secure connection (HTTPS)** or localhost access.</p>
+                        <p className="text-white text-sm font-black uppercase tracking-tight">{t('products.accessRestricted')}</p>
+                        <p className="text-white/50 text-[10px] leading-relaxed max-w-[220px] mx-auto font-medium">{t('products.scanNotice')}</p>
                       </div>
                       <button 
                         type="button"
                         onClick={startScanner}
                         className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-950/20"
                       >
-                        Try Again
+                        {t('products.tryAgain')}
                       </button>
                     </div>
                   )}
@@ -494,19 +496,19 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Clinical Product Name</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.clinicalName')}</label>
                   <input name="name" defaultValue={editingProduct?.name} required placeholder="e.g., Composite Resin A3" className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
                 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">SKU / Barcode ID</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.skuId')}</label>
                   <div className="flex gap-2">
                     <input 
                       name="sku" 
                       value={scannedSku} 
                       onChange={(e) => setScannedSku(e.target.value)}
                       required 
-                      placeholder="Scan or enter manually"
+                      placeholder={t('products.searchPlaceholder')}
                       className="flex-grow px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" 
                     />
                     <button 
@@ -522,9 +524,9 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('common.category')}</label>
                   <select name="category" defaultValue={editingProduct?.category || ''} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold appearance-none">
-                    <option value="" disabled>Select Category</option>
+                    <option value="" disabled>{t('common.category')}</option>
                     {categories.map(cat => (
                       <option key={cat.id} value={cat.name}>{cat.name}</option>
                     ))}
@@ -532,35 +534,35 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Expiry Date (Safety)</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.expirySafety')}</label>
                   <input name="expiryDate" type="date" defaultValue={editingProduct?.expiryDate} className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Retail Price (DA)</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.retailPrice')}</label>
                   <input name="price" type="number" step="0.01" defaultValue={editingProduct?.price} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Purchase Cost (DA)</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.purchaseCost')}</label>
                   <input name="cost" type="number" step="0.01" defaultValue={editingProduct?.cost} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Opening Stock</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.openingStock')}</label>
                   <input name="stock" type="number" defaultValue={editingProduct?.stock || 0} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Min Alert Level</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.minAlert')}</label>
                   <input name="minStock" type="number" defaultValue={editingProduct?.minStock || 5} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-slate-100">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors">Dismiss</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors">{t('common.dismiss')}</button>
                 <button type="submit" className="w-full sm:w-auto px-10 py-3.5 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/30 hover:bg-indigo-700">
-                  {editingProduct ? 'Commit Changes' : 'Complete Registration'}
+                  {editingProduct ? t('products.commitChanges') : t('products.completeRegistration')}
                 </button>
               </div>
             </form>

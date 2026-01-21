@@ -11,12 +11,14 @@ import {
   Search
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../LanguageContext';
 
 interface Props {
   invoices: Invoice[];
 }
 
 const InvoicesPage: React.FC<Props> = ({ invoices }) => {
+  const { t } = useLanguage();
   // Filter States
   const [filterType, setFilterType] = useState<string>('all');
   const [filterEntity, setFilterEntity] = useState<string>('all');
@@ -60,21 +62,21 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
     <div className="space-y-6 lg:space-y-8 animate-in fade-in duration-500 pb-24 lg:pb-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">Ledger & Invoices</h1>
-          <p className="text-sm lg:text-base text-slate-500">Transaction history for your practice (Amounts in DA).</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">{t('invoices.title')}</h1>
+          <p className="text-sm lg:text-base text-slate-500">{t('invoices.subtitle')}</p>
         </div>
         <div className="flex w-full sm:w-auto gap-2 lg:gap-3">
           <Link 
             to="/invoice/new/purchase"
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-3.5 lg:py-3 rounded-2xl font-bold hover:bg-slate-50 transition-all shadow-sm text-sm"
           >
-            Buy Stock
+            {t('invoices.buyStock')}
           </Link>
           <Link 
             to="/invoice/new/sale"
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-3.5 lg:py-3 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/30 text-sm"
           >
-            Sell Items
+            {t('invoices.sellItems')}
           </Link>
         </div>
       </div>
@@ -84,14 +86,14 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
         <div className="flex items-center justify-between border-b border-slate-50 pb-4">
           <div className="flex items-center gap-2 text-indigo-600">
             <Filter size={18} />
-            <h2 className="text-xs font-black uppercase tracking-widest">Advanced Filters</h2>
+            <h2 className="text-xs font-black uppercase tracking-widest">{t('invoices.filters')}</h2>
           </div>
           {isFiltered && (
             <button 
               onClick={resetFilters}
               className="flex items-center gap-1.5 text-rose-500 font-bold text-[10px] uppercase tracking-widest hover:text-rose-600 transition-colors"
             >
-              <X size={14} /> Reset
+              <X size={14} /> {t('common.clear')}
             </button>
           )}
         </div>
@@ -99,12 +101,12 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Search */}
           <div className="space-y-2 lg:col-span-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Search Ledger</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('invoices.searchLedger')}</label>
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
               <input 
                 type="text"
-                placeholder="INV-XXXX or Entity..."
+                placeholder={t('invoices.searchLedger')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-sm transition-all"
@@ -122,7 +124,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                 onChange={(e) => setStartDate(e.target.value)}
                 className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
               />
-              <span className="text-slate-300 font-bold">to</span>
+              <span className="text-slate-300 font-bold">{t('invoices.to')}</span>
               <input 
                 type="date"
                 value={endDate}
@@ -134,27 +136,27 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
 
           {/* Type Filter */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Classification</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('invoices.classification')}</label>
             <select 
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
               className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all appearance-none cursor-pointer"
             >
-              <option value="all">All Types</option>
-              <option value="sale">Practice Sales</option>
-              <option value="purchase">Supply Orders</option>
+              <option value="all">{t('invoices.allTypes')}</option>
+              <option value="sale">{t('invoices.practiceSales')}</option>
+              <option value="purchase">{t('invoices.supplyOrders')}</option>
             </select>
           </div>
 
           {/* Entity Filter */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Billing Entity</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('invoices.billingEntity')}</label>
             <select 
               value={filterEntity}
               onChange={(e) => setFilterEntity(e.target.value)}
               className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all appearance-none cursor-pointer"
             >
-              <option value="all">All Entities</option>
+              <option value="all">{t('invoices.allEntities')}</option>
               {entities.map(name => (
                 <option key={name} value={name}>{name}</option>
               ))}
@@ -205,7 +207,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                 </div>
                 {inv.total - (inv.paidAmount || 0) > 0 && (
                   <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Balance Due:</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoices.balance')}:</span>
                     <span className="text-sm font-black text-rose-500">{(inv.total - (inv.paidAmount || 0)).toLocaleString()} DA</span>
                   </div>
                 )}
@@ -219,7 +221,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                   {inv.status}
                 </div>
                 <Link to={`/invoice/view/${inv.id}`} className="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-widest px-4 py-2 bg-indigo-50 rounded-xl">
-                  <Eye size={12} /> View
+                  <Eye size={12} /> {t('common.view')}
                 </Link>
               </div>
             </div>
@@ -232,13 +234,13 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
         <table className="w-full text-left">
           <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
             <tr>
-              <th className="px-8 py-5">Invoice Reference</th>
-              <th className="px-8 py-5">Billing Entity</th>
-              <th className="px-8 py-5">Classification</th>
-              <th className="px-8 py-5">Total (DA)</th>
-              <th className="px-8 py-5">Balance (DA)</th>
-              <th className="px-8 py-5 text-center">Status</th>
-              <th className="px-8 py-5 text-right">Action</th>
+              <th className="px-8 py-5">{t('invoices.reference')}</th>
+              <th className="px-8 py-5">{t('invoices.billingEntity')}</th>
+              <th className="px-8 py-5">{t('invoices.classification')}</th>
+              <th className="px-8 py-5">{t('common.total')}</th>
+              <th className="px-8 py-5">{t('invoices.balance')}</th>
+              <th className="px-8 py-5 text-center">{t('common.status')}</th>
+              <th className="px-8 py-5 text-right">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -247,9 +249,9 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                 <td colSpan={6} className="px-8 py-16 text-center">
                   <div className="flex flex-col items-center gap-3 text-slate-300">
                     <FileText size={40} strokeWidth={1} />
-                    <p className="text-sm font-bold">No transactions found matching your selection.</p>
+                    <p className="text-sm font-bold">{t('invoices.noResults')}</p>
                     {isFiltered && (
-                      <button onClick={resetFilters} className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mt-2">Clear Filters</button>
+                      <button onClick={resetFilters} className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mt-2">{t('common.clear')}</button>
                     )}
                   </div>
                 </td>

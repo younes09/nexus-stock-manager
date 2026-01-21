@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Category } from '../types';
 import { Plus, Edit2, Trash2, Layers, X, Folder } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 interface Props {
   categories: Category[];
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete }) => {
+  const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -36,15 +38,15 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">Supply Categories</h1>
-          <p className="text-sm lg:text-base text-slate-500">Organize your clinical inventory into manageable groups.</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">{t('categories.title')}</h1>
+          <p className="text-sm lg:text-base text-slate-500">{t('categories.subtitle')}</p>
         </div>
         <button 
           onClick={() => { setEditingCategory(null); setIsModalOpen(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 lg:py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
         >
           <Plus size={20} />
-          Add Category
+          {t('categories.addCategory')}
         </button>
       </div>
 
@@ -62,7 +64,7 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
             </div>
             
             <h3 className="text-lg font-black text-slate-900 tracking-tight">{c.name}</h3>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Classification ID: {c.id}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{t('categories.categoryId')}: {c.id}</p>
 
             {/* Decorative background circle */}
             <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-sky-50/50 rounded-full blur-2xl group-hover:bg-sky-100/50 transition-colors"></div>
@@ -72,7 +74,7 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
         {categories.length === 0 && (
           <div className="col-span-full bg-white p-12 rounded-[2.5rem] border-2 border-dashed border-slate-100 text-center flex flex-col items-center gap-4">
             <div className="p-4 bg-slate-50 rounded-full text-slate-300"><Layers size={48} strokeWidth={1} /></div>
-            <p className="text-slate-400 font-bold">No categories defined yet. Add your first one to organize stock.</p>
+            <p className="text-slate-400 font-bold">{t('categories.noCategories')}</p>
           </div>
         )}
       </div>
@@ -83,26 +85,26 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
             <div className="sticky top-0 bg-white p-6 lg:p-8 border-b border-slate-100 flex justify-between items-center z-10">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-sky-100 text-sky-600 rounded-xl"><Layers size={20} /></div>
-                <h2 className="text-xl lg:text-2xl font-black text-slate-900">{editingCategory ? 'Edit Category' : 'New Category'}</h2>
+                <h2 className="text-xl lg:text-2xl font-black text-slate-900">{editingCategory ? t('categories.editCategory') : t('categories.newCategory')}</h2>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full"><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 lg:p-8 space-y-6">
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Category Name</label>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('common.name')}</label>
                 <input 
                     name="name" 
                     defaultValue={editingCategory?.name} 
                     required 
-                    placeholder="e.g., Clinical Disposables"
+                    placeholder={`${t('common.name')}...`}
                     className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" 
                 />
               </div>
               
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-slate-100">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors">{t('common.cancel')}</button>
                 <button type="submit" className="w-full sm:w-auto px-10 py-3.5 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/30 hover:bg-indigo-700">
-                  Save Category
+                  {t('common.save')}
                 </button>
               </div>
             </form>

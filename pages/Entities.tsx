@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Entity, EntityType } from '../types';
 import { Plus, Edit2, Trash2, Mail, Phone, MapPin, X, User } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 interface Props {
   type: EntityType;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDelete, invoices }) => {
+  const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
 
@@ -42,15 +44,19 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight capitalize">{type} Directory</h1>
-          <p className="text-sm lg:text-base text-slate-500">Managing {entities.length} active {type} accounts.</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
+            {type === 'client' ? t('entities.clients.title') : t('entities.suppliers.title')}
+          </h1>
+          <p className="text-sm lg:text-base text-slate-500">
+            {(type === 'client' ? t('entities.clients.subtitle') : t('entities.suppliers.subtitle')).replace('{count}', entities.length.toString())}
+          </p>
         </div>
         <button 
           onClick={() => { setEditingEntity(null); setIsModalOpen(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 lg:py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
         >
           <Plus size={20} />
-          New {type}
+          {t('entities.new').replace('{type}', type === 'client' ? t('common.client') : t('common.supplier'))}
         </button>
       </div>
 
@@ -90,15 +96,15 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
                 if (totalDebt > 0) {
                   return (
                     <div className="mt-4 p-4 bg-rose-50 rounded-2xl border border-rose-100">
-                      <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Outstanding Balance</div>
+                      <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">{t('entities.outstandingBalance')}</div>
                       <div className="text-lg font-black text-rose-600">{totalDebt.toLocaleString()} DA</div>
                     </div>
                   );
                 }
                 return (
                   <div className="mt-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                    <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Account Status</div>
-                    <div className="text-sm font-black text-emerald-600 uppercase tracking-widest">Fully Settled</div>
+                    <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">{t('entities.accountStatus')}</div>
+                    <div className="text-sm font-black text-emerald-600 uppercase tracking-widest">{t('entities.fullySettled')}</div>
                   </div>
                 );
               })()}
@@ -116,33 +122,33 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
             <div className="sticky top-0 bg-white p-6 lg:p-8 border-b border-slate-100 flex justify-between items-center z-10">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl"><User size={20} /></div>
-                <h2 className="text-xl lg:text-2xl font-black text-slate-900 capitalize">{editingEntity ? `Edit ${type}` : `New ${type}`}</h2>
+                <h2 className="text-xl lg:text-2xl font-black text-slate-900">{editingEntity ? t('common.update') : t('common.add')} {type === 'client' ? t('common.client') : t('common.supplier')}</h2>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full"><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 lg:p-8 space-y-6">
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Display Name</label>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('entities.displayName')}</label>
                 <input name="name" defaultValue={editingEntity?.name} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('common.email')}</label>
                   <input name="email" type="email" defaultValue={editingEntity?.email} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Primary Phone</label>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('entities.primaryPhone')}</label>
                   <input name="phone" defaultValue={editingEntity?.phone} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Physical Address</label>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('entities.physicalAddress')}</label>
                 <textarea name="address" defaultValue={editingEntity?.address} required rows={3} className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
               </div>
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-slate-100">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors">{t('common.cancel')}</button>
                 <button type="submit" className="w-full sm:w-auto px-10 py-3.5 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/30 hover:bg-indigo-700">
-                  Store {type}
+                  {t('entities.store').replace('{type}', type === 'client' ? t('common.client') : t('common.supplier'))}
                 </button>
               </div>
             </form>

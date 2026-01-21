@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useLanguage } from '../LanguageContext';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Invoice, Entity } from '../types';
 import { ChevronLeft, Printer, FileText, Calendar, User, MapPin, Phone, Mail, Stethoscope } from 'lucide-react';
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const invoice = invoices.find(inv => inv.id === id);
@@ -20,9 +22,9 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
   if (!invoice) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <h2 className="text-2xl font-bold text-slate-900">Invoice not found</h2>
+        <h2 className="text-2xl font-bold text-slate-900">{t('invoiceDetail.notFound')}</h2>
         <button onClick={() => navigate('/invoices')} className="text-indigo-600 font-bold hover:underline flex items-center gap-2">
-          <ChevronLeft size={20} /> Return to Ledger
+          <ChevronLeft size={20} /> {t('invoiceDetail.returnLedger')}
         </button>
       </div>
     );
@@ -35,7 +37,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
       <div className="no-print flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 font-bold hover:text-slate-800 transition-colors">
           <ChevronLeft size={20} />
-          Back
+          {t('common.back')}
         </button>
         <div className="flex gap-2">
           <button 
@@ -43,7 +45,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-500/30"
           >
             <Printer size={18} />
-            Print Invoice
+            {t('invoiceDetail.printInvoice')}
           </button>
         </div>
       </div>
@@ -58,7 +60,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
               </div>
               <div>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">DentaStock Nexus</h1>
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Medical Supply Solutions</p>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">{t('invoiceDetail.medicalSupplySolutions')}</p>
               </div>
             </div>
             <div className="space-y-1 text-slate-500 text-xs font-bold leading-relaxed">
@@ -70,15 +72,15 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
           </div>
           <div className="text-left sm:text-right w-full sm:w-auto space-y-2">
             <h2 className={`text-5xl font-black uppercase mb-4 opacity-10 ${invoice.type === 'sale' ? 'text-indigo-600' : 'text-emerald-600'}`}>
-              {invoice.type === 'sale' ? 'Invoice' : 'Purchase'}
+              {invoice.type === 'sale' ? t('invoices.reference').split(' ')[0] : t('invoices.newPurchase').split(' ')[1]}
             </h2>
             <div className="inline-block px-4 py-2 bg-slate-50 rounded-xl">
               <div className="flex justify-between sm:justify-end gap-6 border-b border-slate-100 pb-2">
-                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Number</span>
+                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">{t('common.sku')}</span>
                 <span className="font-black text-slate-900">{invoice.number}</span>
               </div>
               <div className="flex justify-between sm:justify-end gap-6 pt-2">
-                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Issue Date</span>
+                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">{t('common.date')}</span>
                 <span className="font-black text-slate-900">{new Date(invoice.date).toLocaleDateString()}</span>
               </div>
             </div>
@@ -88,7 +90,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
         {/* Billing Info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mb-16 py-12 border-y border-slate-100">
           <div className="space-y-4">
-            <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Bill To</h3>
+            <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">{t('invoiceDetail.billTo')}</h3>
             <div className="space-y-3">
               <div className="text-2xl font-black text-slate-900">{invoice.entityName}</div>
               {entity && (
@@ -102,7 +104,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
           </div>
           <div className="flex flex-col justify-end text-left sm:text-right space-y-4">
             <div>
-              <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Status</h3>
+              <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">{t('common.status')}</h3>
               <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest ${
                 invoice.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
               }`}>
@@ -111,14 +113,14 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
               </span>
             </div>
             <div>
-              <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Total (DA)</h3>
+              <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">{t('common.total')} (DA)</h3>
               <div className="text-4xl font-black text-slate-900 tracking-tighter">
                 {invoice.total.toLocaleString()} DA
               </div>
             </div>
             {invoice.paidAmount < invoice.total && (
               <div className="bg-rose-50 p-4 rounded-2xl">
-                <h3 className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em] mb-1">Balance Due</h3>
+                <h3 className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em] mb-1">{t('invoiceDetail.balanceDue')}</h3>
                 <div className="text-2xl font-black text-rose-600 tracking-tighter">
                   {(invoice.total - invoice.paidAmount).toLocaleString()} DA
                 </div>
@@ -126,13 +128,13 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
                   onClick={() => { setPaymentAmount(invoice.total - invoice.paidAmount); setIsPaying(true); }}
                   className="mt-3 w-full bg-rose-600 text-white py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-700 transition-colors shadow-lg shadow-rose-500/20 no-print"
                 >
-                  Record Payment
+                  {t('invoiceDetail.recordPayment')}
                 </button>
               </div>
             )}
             {invoice.paidAmount >= invoice.total && invoice.paidAmount > 0 && (
               <div className="bg-emerald-50 p-4 rounded-2xl">
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Settle Status: Fully Paid</span>
+                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{t('invoiceDetail.settleBalance')}: {t('common.paid')}</span>
               </div>
             )}
           </div>
@@ -141,12 +143,12 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
         {isPaying && (
           <div className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white rounded-[2.5rem] p-8 lg:p-12 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
-              <h3 className="text-2xl font-black text-slate-900 mb-2">Settle Balance</h3>
-              <p className="text-slate-500 text-sm font-bold mb-8">Recording additional payment for {invoice.number}</p>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">{t('invoiceDetail.settleBalance')}</h3>
+              <p className="text-slate-500 text-sm font-bold mb-8">{t('invoiceDetail.recordPayment')} - {invoice.number}</p>
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Payment Amount (DA)</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">{t('common.paid')} (DA)</label>
                   <input 
                     type="number" 
                     value={paymentAmount}
@@ -157,7 +159,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
                 </div>
                 
                 <div className="flex gap-3 pt-4">
-                  <button onClick={() => setIsPaying(false)} className="flex-1 py-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition-all">Cancel</button>
+                  <button onClick={() => setIsPaying(false)} className="flex-1 py-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition-all">{t('common.cancel')}</button>
                   <button 
                     onClick={() => {
                       const newPaid = invoice.paidAmount + paymentAmount;
@@ -170,7 +172,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
                     }}
                     className="flex-2 py-4 px-8 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all uppercase text-xs tracking-widest"
                   >
-                    Post Payment
+                    {t('invoiceDetail.postPayment')}
                   </button>
                 </div>
               </div>
@@ -181,10 +183,10 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
         {/* Table Items */}
         <div className="space-y-6">
           <div className="grid grid-cols-12 gap-4 border-b-2 border-slate-900 pb-4">
-            <div className="col-span-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Product Description</div>
-            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Qty</div>
-            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Rate</div>
-            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total</div>
+            <div className="col-span-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoiceCreator.productItem')}</div>
+            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{t('invoiceCreator.quantity')}</div>
+            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t('invoiceCreator.unitPrice')}</div>
+            <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t('common.total')}</div>
           </div>
 
           <div className="divide-y divide-slate-100">
@@ -206,11 +208,11 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
         <div className="mt-16 flex flex-col items-end border-t border-slate-100 pt-10">
           <div className="w-full sm:w-80 space-y-4">
             <div className="flex justify-between text-slate-500 font-bold text-sm">
-              <span>Subtotal</span>
+              <span>{t('invoiceCreator.subtotal')}</span>
               <span className="text-slate-900">{invoice.subtotal.toLocaleString()} DA</span>
             </div>
             <div className="flex justify-between items-center pt-6 border-t border-slate-900">
-              <span className="text-lg font-black text-slate-900 uppercase tracking-tight">Total Payable</span>
+              <span className="text-lg font-black text-slate-900 uppercase tracking-tight">{t('invoiceDetail.totalPayable')}</span>
               <span className="text-3xl font-black text-indigo-600">{invoice.total.toLocaleString()} DA</span>
             </div>
           </div>
@@ -219,15 +221,15 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
         {/* Footer Terms */}
         <div className="mt-24 pt-10 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-12 text-[10px] text-slate-400 font-bold leading-relaxed">
           <div className="space-y-4">
-            <h4 className="font-black text-slate-900 uppercase tracking-[0.2em]">Terms & Conditions</h4>
-            <p>1. Please quote invoice number for all payment references.</p>
-            <p>2. Payment is due within 30 days unless otherwise agreed.</p>
-            <p>3. Medical supplies are non-returnable once seals are broken.</p>
+            <h4 className="font-black text-slate-900 uppercase tracking-[0.2em]">{t('invoiceDetail.termsAndConditions')}</h4>
+            <p>{t('invoiceDetail.term1')}</p>
+            <p>{t('invoiceDetail.term2')}</p>
+            <p>{t('invoiceDetail.term3')}</p>
           </div>
           <div className="flex flex-col items-center sm:items-end justify-end space-y-6">
             <div className="text-center sm:text-right">
               <div className="h-16 w-32 border-b-2 border-slate-200 mb-2"></div>
-              <p className="uppercase tracking-[0.2em] font-black text-slate-900">Authorized Signature</p>
+              <p className="uppercase tracking-[0.2em] font-black text-slate-900">{t('invoiceDetail.authorizedSignature')}</p>
             </div>
           </div>
         </div>
@@ -235,7 +237,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
       
       {/* Decorative Branding */}
       <div className="text-center py-10 opacity-20 pointer-events-none no-print">
-         <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400">Generated by DentaStock Nexus Enterprise v2.5</p>
+         <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400">{t('invoiceDetail.generatedBy')}</p>
       </div>
     </div>
   );

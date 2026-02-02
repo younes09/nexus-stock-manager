@@ -11,9 +11,10 @@ interface Props {
   onAdd: (p: Product) => void;
   onUpdate: (p: Product) => void;
   onDelete: (id: string) => void;
+  showDialog: (config: any) => void;
 }
 
-const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, onDelete }) => {
+const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, onDelete, showDialog }) => {
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -136,8 +137,14 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
         }
       } catch (err) {
         console.error("Camera access failed", err);
-        setCameraPermission('denied');
-        setIsScanning(true); // Keep UI open to show error
+        showDialog({
+            title: "Camera Error",
+            message: t('invoiceCreator.cameraAccessFailed'),
+            onConfirm: () => {},
+            isAlert: true,
+            variant: 'danger'
+        });
+        setIsScanning(false);
       }
     }, 100);
   };
@@ -185,7 +192,13 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
     };
 
     if (product.category === "") {
-        alert("Please select a category");
+        showDialog({
+            title: t('common.category'),
+            message: "Please select a valid medical category for this supply.",
+            onConfirm: () => {},
+            isAlert: true,
+            variant: 'warning'
+        });
         return;
     }
 
@@ -296,7 +309,17 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(p)} className="p-2 text-slate-400 hover:text-indigo-600"><Edit2 size={18} /></button>
-                    <button onClick={() => onDelete(p.id)} className="p-2 text-slate-400 hover:text-rose-600"><Trash2 size={18} /></button>
+                    <button 
+                      onClick={() => showDialog({
+                        title: t('common.confirmDelete'),
+                        message: `Are you sure you want to delete "${p.name}"? This will permanently remove its medical records.`,
+                        onConfirm: () => onDelete(p.id),
+                        variant: 'danger'
+                      })} 
+                      className="p-2 text-slate-400 hover:text-rose-600"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </div>
                 
@@ -396,7 +419,17 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => openEdit(p)} className="p-2 text-slate-400 hover:text-indigo-600 transition-all"><Edit2 size={16} /></button>
-                        <button onClick={() => onDelete(p.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={16} /></button>
+                        <button 
+                          onClick={() => showDialog({
+                            title: t('common.confirmDelete'),
+                            message: `Are you sure you want to delete "${p.name}"? This action is clinicaly permanent.`,
+                            onConfirm: () => onDelete(p.id),
+                            variant: 'danger'
+                          })} 
+                          className="p-2 text-slate-400 hover:text-rose-600 transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>

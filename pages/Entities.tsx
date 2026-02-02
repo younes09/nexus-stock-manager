@@ -11,9 +11,10 @@ interface Props {
   onUpdate: (e: Entity) => void;
   onDelete: (id: string) => void;
   invoices: any[];
+  showDialog: (config: any) => void;
 }
 
-const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDelete, invoices }) => {
+const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDelete, invoices, showDialog }) => {
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
@@ -69,7 +70,17 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
               </div>
               <div className="flex gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => { setEditingEntity(e); setIsModalOpen(true); }} className="p-2.5 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-xl transition-all hover:bg-white shadow-sm"><Edit2 size={16} /></button>
-                <button onClick={() => onDelete(e.id)} className="p-2.5 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl transition-all hover:bg-white shadow-sm"><Trash2 size={16} /></button>
+                <button 
+                  onClick={() => showDialog({
+                    title: t('common.confirmDelete'),
+                    message: `Are you sure you want to remove ${e.name}? This will affect all associated clinical records if not archived.`,
+                    onConfirm: () => onDelete(e.id),
+                    variant: 'danger'
+                  })} 
+                  className="p-2.5 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl transition-all hover:bg-white shadow-sm"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
             

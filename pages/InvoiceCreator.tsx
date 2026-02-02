@@ -10,9 +10,10 @@ interface Props {
   products: Product[];
   entities: Entity[];
   onSave: (inv: Invoice) => void;
+  showDialog: (config: any) => void;
 }
 
-const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
+const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialog }) => {
   const { t } = useLanguage();
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
@@ -97,7 +98,13 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
         }
       } catch (err) {
         console.error("Camera access failed", err);
-        alert(t('invoiceCreator.cameraAccessFailed'));
+        showDialog({
+          title: "Camera Access",
+          message: t('invoiceCreator.cameraAccessFailed'),
+          onConfirm: () => {},
+          isAlert: true,
+          variant: 'danger'
+        });
         setIsScanning(false);
       }
     }, 100);
@@ -148,7 +155,13 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
         setItems([...items, newItem]);
       }
     } else {
-      alert(t('invoiceCreator.scannedProductNotFound').replace('{sku}', sku));
+      showDialog({
+        title: "Product Search",
+        message: t('invoiceCreator.scannedProductNotFound').replace('{sku}', sku),
+        onConfirm: () => {},
+        isAlert: true,
+        variant: 'warning'
+      });
     }
   };
 
@@ -185,7 +198,13 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave }) => {
 
   const handleSave = () => {
     if (!selectedEntityId || items.length === 0 || items.some(i => !i.productId)) {
-      alert(t('common.entities') + " & " + t('common.products') + " " + t('common.loading'));
+      showDialog({
+        title: "Medical Ledger Error",
+        message: "Please specify a billing entity and add clinical supplies before saving.",
+        onConfirm: () => {},
+        isAlert: true,
+        variant: 'warning'
+      });
       return;
     }
 

@@ -17,9 +17,10 @@ interface Props {
   transactions: CashTransaction[];
   onAdd: (t: CashTransaction) => void;
   onDelete: (id: string) => void;
+  showDialog: (config: any) => void;
 }
 
-const CashManagement: React.FC<Props> = ({ transactions, onAdd, onDelete }) => {
+const CashManagement: React.FC<Props> = ({ transactions, onAdd, onDelete, showDialog }) => {
   const { t } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
@@ -167,7 +168,12 @@ const CashManagement: React.FC<Props> = ({ transactions, onAdd, onDelete }) => {
                                     {t_item.type === 'income' ? '+' : '-'}{formatDA(t_item.amount)}
                                 </div>
                                 <button 
-                                    onClick={() => onDelete(t_item.id)}
+                                    onClick={() => showDialog({
+                                        title: 'Supprimer la transaction',
+                                        message: `Souhaitez-vous vraiment supprimer "${t_item.description}" de votre livre de caisse ?`,
+                                        onConfirm: () => onDelete(t_item.id),
+                                        variant: 'danger'
+                                    })}
                                     className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all p-1"
                                 >
                                     <Trash2 size={16} />

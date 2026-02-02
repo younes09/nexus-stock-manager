@@ -93,7 +93,10 @@ export const translations: Record<Language, any> = {
       expiryDate: 'Expiry Date',
       quantity: 'Quantity',
       subtotal: 'Subtotal',
-      initializingPersistence: 'Initializing Persistence...'
+      initializingPersistence: 'Initializing Persistence...',
+      confirmDelete: 'Confirm Deletion',
+      confirmDeleteMsg: 'Are you sure you want to delete this item? This action cannot be undone.',
+      confirm: 'Confirm'
     },
     nav: {
       overview: 'Overview',
@@ -159,8 +162,8 @@ export const translations: Record<Language, any> = {
       newCategory: 'New Category',
       editCategory: 'Edit Category',
       categoryId: 'Classification ID',
-      saveCategory: 'Save Category',
-      noCategories: 'No categories defined yet. Add your first one to organize stock.'
+      noCategories: 'No categories defined yet. Add your first one to organize stock.',
+      deleteMessage: 'Are you sure you want to delete this category? This action cannot be undone and may affect associated products.'
     },
     entities: {
       clients: {
@@ -312,7 +315,10 @@ export const translations: Record<Language, any> = {
       expiryDate: 'Date d\'expiration',
       quantity: 'Quantité',
       subtotal: 'Sous-total',
-      initializingPersistence: 'Initialisation du système...'
+      initializingPersistence: 'Initialisation du système...',
+      confirmDelete: 'Confirmer la suppression',
+      confirmDeleteMsg: 'Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.',
+      confirm: 'Confirmer'
     },
     nav: {
       overview: 'Aperçu',
@@ -378,8 +384,8 @@ export const translations: Record<Language, any> = {
       newCategory: 'Nouvelle Catégorie',
       editCategory: 'Modifier la Catégorie',
       categoryId: 'ID de Classification',
-      saveCategory: 'Enregistrer la Catégorie',
-      noCategories: 'Aucune catégorie définie. Ajoutez-en une pour organiser le stock.'
+      noCategories: 'Aucune catégorie définie. Ajoutez-en une pour organiser le stock.',
+      deleteMessage: 'Voulez-vous vraiment supprimer cette catégorie ? Cette action est irréversible et peut affecter les produits associés.'
     },
     entities: {
       clients: {

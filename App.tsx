@@ -26,6 +26,7 @@ import CategoriesPage from './pages/Categories';
 import InvoiceDetail from './pages/InvoiceDetail';
 import LoginPage from './pages/Login';
 import CashManagement from './pages/CashManagement';
+import ConfirmDialog from './components/ConfirmDialog';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { useLanguage } from './LanguageContext';
 
@@ -49,6 +50,22 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: 'danger' | 'warning' | 'info' | 'success';
+    isAlert?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -170,6 +187,14 @@ const App: React.FC = () => {
     }
   };
 
+  const showDialog = (config: Omit<typeof dialogConfig, 'isOpen'>) => {
+    setDialogConfig({ ...config, isOpen: true });
+  };
+
+  const hideDialog = () => {
+    setDialogConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
 
   // --- Storage Mutators ---
 
@@ -187,9 +212,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('products').insert([dbProduct]);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add product:', err);
-      alert('Failed to add product. Please check your connection.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to add product. Please check your connection.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -209,9 +240,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('products').update(dbProduct).eq('id', p.id);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update product:', err);
-      alert('Failed to update product. Please check your connection.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to update product. Please check your connection.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -221,7 +258,13 @@ const App: React.FC = () => {
     // Check if product is in use
     const isUsed = state.invoices.some(inv => inv.items.some(item => item.productId === id));
     if (isUsed) {
-      alert("Cannot delete this product because it is part of existing invoices.");
+      showDialog({
+        title: 'Protected Item',
+        message: "Cannot delete this product because it is part of existing invoices. Archive it instead if needed.",
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'warning'
+      });
       return;
     }
 
@@ -231,9 +274,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete product:', err);
-      alert('Failed to delete product. Please check your connection.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to delete product. Please check your connection.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -247,9 +296,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('entities').insert([newEntity]);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add entity:', err);
-      alert('Failed to add client/supplier. Please check your connection.');
+      showDialog({
+        title: 'Network Error',
+        message: 'Failed to add client/supplier record. Please check your cloud connection.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -262,9 +317,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('entities').update(e).eq('id', e.id);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update entity:', err);
-      alert('Failed to update client/supplier. Please check your connection.');
+      showDialog({
+        title: 'Sync Error',
+        message: 'Failed to update record. Please verify your internet connection.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -274,7 +335,13 @@ const App: React.FC = () => {
     // Check if entity is in use
     const isUsed = state.invoices.some(inv => inv.entityId === id);
     if (isUsed) {
-      alert("Cannot delete this client/supplier because they have associated invoices.");
+      showDialog({
+        title: 'Integrity Check',
+        message: "Deletion blocked: This entity is linked to existing invoices. You must remove the invoices first.",
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'warning'
+      });
       return;
     }
 
@@ -284,9 +351,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('entities').delete().eq('id', id);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete entity:', err);
-      alert('Failed to delete client/supplier. Please check your connection.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to remove entity. Please try again later.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -300,9 +373,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('categories').insert([newCategory]);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add category:', err);
-      alert('Failed to add category. Please check your connection.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to create new category. Please check your connection.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -315,9 +394,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('categories').update(c).eq('id', c.id);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update category:', err);
-      alert('Failed to update category. Please check your connection.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to update category details.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -330,9 +415,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('categories').delete().eq('id', id);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete category:', err);
-      alert('Failed to delete category. Please check your connection.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to remove category.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -390,7 +481,13 @@ const App: React.FC = () => {
         }
       } catch (error: any) {
         console.error('Invoice Cloud Save Failed:', error);
-        alert(`Failed to save invoice to cloud: ${error?.message || 'Unknown error'}`);
+        showDialog({
+          title: 'Cloud Storage Error',
+          message: `Failed to save invoice to cloud: ${error?.message || 'Unknown network error'}`,
+          onConfirm: hideDialog,
+          isAlert: true,
+          variant: 'danger'
+        });
       } finally {
         setIsSyncing(false);
       }
@@ -421,7 +518,13 @@ const App: React.FC = () => {
         if (error) throw error;
       } catch (error: any) {
         console.error('Invoice Cloud Update Failed:', error);
-        alert(`Failed to update invoice in cloud: ${error?.message || 'Unknown error'}`);
+        showDialog({
+          title: 'Update Failed',
+          message: `Cloud update failed: ${error?.message || 'Unknown network error'}`,
+          onConfirm: hideDialog,
+          isAlert: true,
+          variant: 'danger'
+        });
       } finally {
         setIsSyncing(false);
       }
@@ -437,9 +540,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('cash_transactions').insert([newT]);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add transaction:', err);
-      alert('Failed to record transaction. Please check your connection.');
+      showDialog({
+        title: 'Finance Error',
+        message: 'Failed to record cash transaction. Please verify connectivity.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -452,9 +561,15 @@ const App: React.FC = () => {
       const { error } = await supabase.from('cash_transactions').delete().eq('id', id);
       if (error) throw error;
       await fetchData(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete transaction:', err);
-      alert('Failed to delete transaction. Please check your connection.');
+      showDialog({
+        title: 'Error',
+        message: 'Failed to remove transaction record.',
+        onConfirm: hideDialog,
+        isAlert: true,
+        variant: 'danger'
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -638,17 +753,36 @@ const App: React.FC = () => {
         <div className="p-4 lg:p-8 flex-grow">
           <Routes>
             <Route path="/" element={<Dashboard state={state} />} />
-            <Route path="/products" element={<ProductsPage products={state.products} categories={state.categories} onAdd={addProduct} onUpdate={updateProduct} onDelete={deleteProduct} />} />
-            <Route path="/categories" element={<CategoriesPage categories={state.categories} onAdd={addCategory} onUpdate={updateCategory} onDelete={deleteCategory} />} />
-            <Route path="/clients" element={<EntitiesPage type="client" entities={state.entities.filter(e => e.type === 'client')} invoices={state.invoices} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} />} />
-            <Route path="/suppliers" element={<EntitiesPage type="supplier" entities={state.entities.filter(e => e.type === 'supplier')} invoices={state.invoices} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} />} />
+            <Route path="/products" element={<ProductsPage products={state.products} categories={state.categories} onAdd={addProduct} onUpdate={updateProduct} onDelete={deleteProduct} showDialog={showDialog} />} />
+            <Route path="/categories" element={<CategoriesPage categories={state.categories} onAdd={addCategory} onUpdate={updateCategory} onDelete={deleteCategory} showDialog={showDialog} />} />
+            <Route path="/clients" element={<EntitiesPage type="client" entities={state.entities.filter(e => e.type === 'client')} invoices={state.invoices} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} showDialog={showDialog} />} />
+            <Route path="/suppliers" element={<EntitiesPage type="supplier" entities={state.entities.filter(e => e.type === 'supplier')} invoices={state.invoices} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} showDialog={showDialog} />} />
             <Route path="/invoices" element={<InvoicesPage invoices={state.invoices} />} />
-            <Route path="/invoice/new/:type" element={<InvoiceCreator products={state.products} entities={state.entities} onSave={addInvoice} />} />
+            <Route path="/invoice/new/:type" element={<InvoiceCreator products={state.products} entities={state.entities} onSave={addInvoice} showDialog={showDialog} />} />
             <Route path="/invoice/view/:id" element={<InvoiceDetail invoices={state.invoices} entities={state.entities} onUpdate={updateInvoice} />} />
-            <Route path="/cash" element={<CashManagement transactions={state.cashTransactions} onAdd={addCashTransaction} onDelete={deleteCashTransaction} />} />
+            <Route path="/cash" element={<CashManagement transactions={state.cashTransactions} onAdd={addCashTransaction} onDelete={deleteCashTransaction} showDialog={showDialog} />} />
           </Routes>
         </div>
       </main>
+
+      {/* Global Confirmation/Alert Dialog */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        confirmText={dialogConfig.confirmText}
+        cancelText={dialogConfig.cancelText}
+        variant={dialogConfig.variant}
+        isAlert={dialogConfig.isAlert}
+        onConfirm={() => {
+          dialogConfig.onConfirm();
+          hideDialog();
+        }}
+        onCancel={() => {
+          if (dialogConfig.onCancel) dialogConfig.onCancel();
+          hideDialog();
+        }}
+      />
 
       {/* Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-t border-slate-200 grid grid-cols-5 items-center px-2 z-50 shadow-lg no-print">

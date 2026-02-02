@@ -92,7 +92,8 @@ export const translations: Record<Language, any> = {
       sku: 'SKU',
       expiryDate: 'Expiry Date',
       quantity: 'Quantity',
-      subtotal: 'Subtotal'
+      subtotal: 'Subtotal',
+      initializingPersistence: 'Initializing Persistence...'
     },
     nav: {
       overview: 'Overview',
@@ -310,7 +311,8 @@ export const translations: Record<Language, any> = {
       sku: 'Référence (SKU)',
       expiryDate: 'Date d\'expiration',
       quantity: 'Quantité',
-      subtotal: 'Sous-total'
+      subtotal: 'Sous-total',
+      initializingPersistence: 'Initialisation du système...'
     },
     nav: {
       overview: 'Aperçu',

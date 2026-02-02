@@ -76,9 +76,9 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
               <p className="text-[10px] text-sky-600 font-black uppercase tracking-[0.2em]">{t('invoiceDetail.medicalSupplySolutions')}</p>
             </div>
           </div>
-          <div className="text-left md:text-right space-y-1 text-slate-500 text-xs font-bold leading-relaxed">
-            <p className="text-slate-900 font-black">Dr. Jane Smith Practice</p>
-            <p>42 Ortho Plaza, Algiers 16000</p>
+          <div className="text-slate-500 text-[10px] md:text-sm font-bold md:text-right leading-relaxed flex-1">
+            <p className="text-slate-900 font-black">{t('invoiceDetail.practiceName')}</p>
+            <p>{t('invoiceDetail.practiceAddress')}</p>
             <p className="flex items-center md:justify-end gap-2"><Phone size={12} className="text-sky-500" /> +213 555-0192</p>
             <p className="flex items-center md:justify-end gap-2"><Mail size={12} className="text-sky-500" /> billing@dentastock.nexus</p>
           </div>
@@ -107,7 +107,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
                   invoice.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
                 }`}>
                   <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${invoice.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                  {invoice.status}
+                  {t('common.' + invoice.status)}
                 </span>
               </div>
               <div>
@@ -115,7 +115,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
                 <span className="font-black text-slate-900 text-xs sm:text-sm">{new Date(invoice.date).toLocaleDateString()}</span>
               </div>
               <div>
-                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('common.sku')}</span>
+                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('invoices.reference')}</span>
                 <span className="font-black text-slate-900 text-xs sm:text-sm">{invoice.number}</span>
               </div>
               <div>
@@ -136,7 +136,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
                 </div>
                 <div>
                   <h4 className="font-black text-rose-900">{t('invoiceDetail.balanceDue')}</h4>
-                  <p className="text-sm text-rose-600 font-bold">{(invoice.total - invoice.paidAmount).toLocaleString()} DA remaining</p>
+                  <p className="text-sm text-rose-600 font-bold">{(invoice.total - invoice.paidAmount).toLocaleString()} {t('common.currency')} {t('invoiceDetail.remaining')}</p>
                 </div>
               </div>
               <button 
@@ -168,11 +168,11 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-6 py-4">
                         <div className="font-black text-slate-900">{item.productName}</div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-tighter">REF: {item.productId.slice(-8).toUpperCase()}</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-tighter">{t('common.ref')} {item.productId.slice(-8).toUpperCase()}</div>
                       </td>
                       <td className="px-6 py-4 text-center font-black text-slate-700">{item.quantity}</td>
-                      <td className="px-6 py-4 text-right font-bold text-slate-600">{item.unitPrice.toLocaleString()} DA</td>
-                      <td className="px-6 py-4 text-right font-black text-slate-900">{item.total.toLocaleString()} DA</td>
+                      <td className="px-6 py-4 text-right font-bold text-slate-600">{item.unitPrice.toLocaleString()} {t('common.currency')}</td>
+                      <td className="px-6 py-4 text-right font-black text-slate-900">{item.total.toLocaleString()} {t('common.currency')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -185,11 +185,11 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
             <div className="w-full sm:w-80 space-y-3">
               <div className="flex justify-between text-slate-500 font-bold text-sm px-2">
                 <span>{t('invoiceCreator.subtotal')}</span>
-                <span className="text-slate-900 font-black">{invoice.subtotal.toLocaleString()} DA</span>
+                <span className="text-slate-900 font-black">{invoice.subtotal.toLocaleString()} {t('common.currency')}</span>
               </div>
               <div className="bg-slate-900 text-white print:bg-white print:text-slate-900 print:border-y-2 print:border-slate-900 p-6 rounded-3xl flex items-center justify-between shadow-xl shadow-slate-900/10">
                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">{t('invoiceDetail.totalPayable')}</span>
-                <span className="text-3xl font-black tracking-tighter">{invoice.total.toLocaleString()} DA</span>
+                <span className="text-3xl font-black tracking-tighter">{invoice.total.toLocaleString()} {t('common.currency')}</span>
               </div>
             </div>
           </div>
@@ -207,7 +207,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
             <div className="text-left min-w-[200px]">
               <div className="h-16 w-48 border-b-2 border-slate-100 mb-4 ml-auto"></div>
               <p className="text-[10px] font-black text-slate-900 uppercase tracking-wide">{t('invoiceDetail.authorizedSignature')}</p>
-              <p className="text-[8px] text-slate-300 font-bold uppercase mt-1 tracking-tighter">CACHET ET SIGNATURE</p>
+              <p className="text-[8px] text-slate-300 font-bold uppercase mt-1 tracking-tighter">{t('invoiceDetail.cachetEtSignature')}</p>
             </div>
           </div>
         </div>

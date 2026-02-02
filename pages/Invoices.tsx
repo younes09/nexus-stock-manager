@@ -116,7 +116,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
 
           {/* Date Range */}
           <div className="space-y-2 lg:col-span-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date Range</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('invoices.dateRange')}</label>
             <div className="flex items-center gap-2">
               <input 
                 type="date"
@@ -170,9 +170,9 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
         {filteredInvoices.length === 0 ? (
           <div className="bg-white p-12 rounded-[2rem] border-2 border-dashed border-slate-100 text-center flex flex-col items-center gap-4">
             <div className="p-4 bg-slate-50 rounded-full text-slate-300"><FileText size={48} strokeWidth={1} /></div>
-            <p className="text-slate-400 font-bold text-sm">No results match your filters.</p>
+            <p className="text-slate-400 font-bold text-sm">{t('invoices.noResultsDetailed')}</p>
             {isFiltered && (
-              <button onClick={resetFilters} className="text-indigo-600 text-xs font-black uppercase">Clear Filters</button>
+              <button onClick={resetFilters} className="text-indigo-600 text-xs font-black uppercase">{t('invoices.clearFilters')}</button>
             )}
           </div>
         ) : (
@@ -193,24 +193,24 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                 <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
                   inv.type === 'sale' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'
                 }`}>
-                  {inv.type}
+                  {inv.type === 'purchase' ? t('invoices.supplyOrders') : t('invoices.practiceSales')}
                 </div>
               </div>
 
               <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <User size={14} className="text-slate-400" />
-                    <span className="text-sm font-bold text-slate-700 truncate max-w-[140px]">{inv.entityName}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <User size={14} className="text-slate-400" />
+                      <span className="text-sm font-bold text-slate-700 truncate max-w-[140px]">{inv.entityName}</span>
+                    </div>
+                    <div className="text-lg font-black text-slate-900">{inv.total.toLocaleString()} {t('common.currency')}</div>
                   </div>
-                  <div className="text-lg font-black text-slate-900">{inv.total.toLocaleString()} DA</div>
-                </div>
-                {inv.total - (inv.paidAmount || 0) > 0 && (
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoices.balance')}:</span>
-                    <span className="text-sm font-black text-rose-500">{(inv.total - (inv.paidAmount || 0)).toLocaleString()} DA</span>
-                  </div>
-                )}
+                  {inv.total - (inv.paidAmount || 0) > 0 && (
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoices.balance')}:</span>
+                      <span className="text-sm font-black text-rose-500">{(inv.total - (inv.paidAmount || 0)).toLocaleString()} {t('common.currency')}</span>
+                    </div>
+                  )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -218,7 +218,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                   inv.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
                 }`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                  {inv.status}
+                  {t('common.' + inv.status)}
                 </div>
                 <Link to={`/invoice/view/${inv.id}`} className="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-widest px-4 py-2 bg-indigo-50 rounded-xl">
                   <Eye size={12} /> {t('common.view')}
@@ -268,17 +268,17 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
                       inv.type === 'sale' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
                     }`}>
-                      {inv.type}
+                      {inv.type === 'purchase' ? t('invoices.supplyOrders') : t('invoices.practiceSales')}
                     </span>
                   </td>
                   <td className="px-8 py-5">
-                    <div className="text-sm font-black text-slate-900">{inv.total.toLocaleString()} DA</div>
+                    <div className="text-sm font-black text-slate-900">{inv.total.toLocaleString()} {t('common.currency')}</div>
                   </td>
                   <td className="px-8 py-5">
                     <div className={`text-sm font-black ${
                       (inv.total - (inv.paidAmount || 0)) > 0 ? 'text-rose-500' : 'text-emerald-500'
                     }`}>
-                      {(inv.total - (inv.paidAmount || 0)).toLocaleString()} DA
+                      {(inv.total - (inv.paidAmount || 0)).toLocaleString()} {t('common.currency')}
                     </div>
                   </td>
                   <td className="px-8 py-5">
@@ -286,7 +286,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                       inv.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
                     }`}>
                       <div className={`w-1.5 h-1.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`}></div>
-                      {inv.status}
+                      {t('common.' + inv.status)}
                     </span>
                   </td>
                   <td className="px-8 py-5 text-right">

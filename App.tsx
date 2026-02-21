@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Users, 
-  Truck, 
-  Plus, 
+import {
+  LayoutDashboard,
+  Package,
+  Users,
+  Truck,
+  Plus,
   AlertTriangle,
   FileText,
   Menu,
@@ -14,7 +14,8 @@ import {
   Stethoscope,
   Layers,
   LogOut,
-  Wallet
+  Wallet,
+  ShoppingCart
 } from 'lucide-react';
 import { Product, Entity, Invoice, AppState, Category, User as UserType } from './types';
 import Dashboard from './pages/Dashboard';
@@ -26,554 +27,26 @@ import CategoriesPage from './pages/Categories';
 import InvoiceDetail from './pages/InvoiceDetail';
 import LoginPage from './pages/Login';
 import CashManagement from './pages/CashManagement';
+import POS from './pages/POS';
 import ConfirmDialog from './components/ConfirmDialog';
-import { supabase, isSupabaseConfigured } from './supabase';
 import { useLanguage } from './LanguageContext';
-
-
-
-const INITIAL_DATA: AppState = {
-  products: [],
-  entities: [],
-  invoices: [],
-  categories: [],
-  cashTransactions: [],
-  user: null,
-};
-
-
+import { useAppContext } from './AppContext';
 
 const App: React.FC = () => {
   const { t, language, setLanguage } = useLanguage();
-  const [state, setState] = useState<AppState>(INITIAL_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const {
+    state, isLoading, isSyncing, logout, login,
+    addProduct, updateProduct, deleteProduct,
+    addEntity, updateEntity, deleteEntity,
+    addCategory, updateCategory, deleteCategory,
+    addInvoice, updateInvoice, addCashTransaction, deleteCashTransaction,
+    showDialog, hideDialog, dialogConfig
+  } = useAppContext();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    onCancel?: () => void;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'danger' | 'warning' | 'info' | 'success';
-    isAlert?: boolean;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  });
-  
+
   const location = useLocation();
-  const navigate = useNavigate();
-
-  // Auth & Realtime Setup
-  useEffect(() => {
-    if (isSupabaseConfigured && supabase) {
-      // 1. Initial Auth Check
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          const user: UserType = {
-            id: session.user.id,
-            email: session.user.email || '',
-            fullName: session.user.user_metadata?.fullName || session.user.email?.split('@')[0] || t('common.medicalOfficer'),
-            role: session.user.user_metadata?.role || 'authorized'
-          };
-          setState(prev => ({ ...prev, user }));
-          fetchData();
-        } else {
-          setIsLoading(false);
-        }
-      });
-
-      // 2. Auth Listener
-      const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session?.user) {
-          const user: UserType = {
-            id: session.user.id,
-            email: session.user.email || '',
-            fullName: session.user.user_metadata?.fullName || session.user.email?.split('@')[0] || t('common.medicalOfficer'),
-            role: session.user.user_metadata?.role || 'authorized'
-          };
-          setState(prev => ({ ...prev, user }));
-          fetchData();
-        } else {
-          setState(prev => ({ ...prev, user: null }));
-          navigate('/');
-        }
-      });
-
-      // 3. Realtime Listener
-      const channel = supabase
-        .channel('schema-db-changes')
-        .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-          fetchData(true);
-        })
-        .subscribe();
-
-      return () => {
-        authSub.unsubscribe();
-        supabase.removeChannel(channel);
-      };
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const fetchData = async (silent = false) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    if (!silent) setIsLoading(true);
-    try {
-      const [
-        { data: products },
-        { data: categories },
-        { data: entities },
-        { data: invoices },
-        { data: cashTransactions },
-      ] = await Promise.all([
-        supabase.from('products').select('*').order('name'),
-        supabase.from('categories').select('*').order('name'),
-        supabase.from('entities').select('*').order('name'),
-        supabase.from('invoices').select('*, invoice_items(*)').order('date', { ascending: false }),
-        supabase.from('cash_transactions').select('*').order('date', { ascending: false }),
-      ]);
-
-      setState(prev => ({
-        ...prev,
-        products: (products as any[])?.map(p => ({
-          ...p,
-          minStock: p.min_stock,
-          expiryDate: p.expiry_date
-        })) || [],
-        categories: (categories as Category[]) || [],
-        entities: (entities as Entity[]) || [],
-        invoices: (invoices as any[])?.map(inv => ({
-          ...inv,
-          entityId: inv.entity_id,
-          entityName: inv.entity_name,
-          paidAmount: inv.paid_amount || 0,
-          items: (inv.invoice_items as any[])?.map(item => ({
-            ...item,
-            productId: item.product_id,
-            productName: item.product_name,
-            unitPrice: item.unit_price,
-            cost: item.cost || 0,
-            total: item.total
-          })) || []
-        })) || [],
-        cashTransactions: (cashTransactions as any[]) || [],
-      }));
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      if (!silent) setIsLoading(false);
-    }
-  };
-
-  const handleLogin = (user: UserType) => {
-    setState(prev => ({ ...prev, user }));
-    navigate('/');
-  };
-
-  const handleLogout = async () => {
-    if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut();
-    } else {
-      setState(prev => ({ ...prev, user: null }));
-      navigate('/');
-    }
-  };
-
-  const showDialog = (config: Omit<typeof dialogConfig, 'isOpen'>) => {
-    setDialogConfig({ ...config, isOpen: true });
-  };
-
-  const hideDialog = () => {
-    setDialogConfig(prev => ({ ...prev, isOpen: false }));
-  };
-
-
-  // --- Storage Mutators ---
-
-  const addProduct = async (p: Product) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { id, minStock, expiryDate, ...otherProps } = p;
-      const dbProduct = { 
-        ...otherProps, 
-        min_stock: minStock, 
-        expiry_date: expiryDate || null 
-      };
-
-      const { error } = await supabase.from('products').insert([dbProduct]);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to add product:', err);
-      showDialog({
-        title: 'Error',
-        message: 'Failed to add product. Please check your connection.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const updateProduct = async (p: Product) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { minStock, expiryDate, ...otherProps } = p;
-      const dbProduct = { 
-        ...otherProps, 
-        min_stock: minStock, 
-        expiry_date: expiryDate || null 
-      };
-
-      const { error } = await supabase.from('products').update(dbProduct).eq('id', p.id);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to update product:', err);
-      showDialog({
-        title: 'Error',
-        message: 'Failed to update product. Please check your connection.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const deleteProduct = async (id: string) => {
-    // Check if product is in use
-    const isUsed = state.invoices.some(inv => inv.items.some(item => item.productId === id));
-    if (isUsed) {
-      showDialog({
-        title: 'Protected Item',
-        message: "Cannot delete this product because it is part of existing invoices. Archive it instead if needed.",
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'warning'
-      });
-      return;
-    }
-
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to delete product:', err);
-      showDialog({
-        title: 'Error',
-        message: 'Failed to delete product. Please check your connection.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const addEntity = async (e: Entity) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { id, ...newEntity } = e;
-      const { error } = await supabase.from('entities').insert([newEntity]);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to add entity:', err);
-      showDialog({
-        title: 'Network Error',
-        message: 'Failed to add client/supplier record. Please check your cloud connection.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const updateEntity = async (e: Entity) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { error } = await supabase.from('entities').update(e).eq('id', e.id);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to update entity:', err);
-      showDialog({
-        title: 'Sync Error',
-        message: 'Failed to update record. Please verify your internet connection.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const deleteEntity = async (id: string) => {
-    // Check if entity is in use
-    const isUsed = state.invoices.some(inv => inv.entityId === id);
-    if (isUsed) {
-      showDialog({
-        title: 'Integrity Check',
-        message: "Deletion blocked: This entity is linked to existing invoices. You must remove the invoices first.",
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'warning'
-      });
-      return;
-    }
-
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { error } = await supabase.from('entities').delete().eq('id', id);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to delete entity:', err);
-      showDialog({
-        title: 'Error',
-        message: 'Failed to remove entity. Please try again later.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const addCategory = async (c: Category) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { id, ...newCategory } = c;
-      const { error } = await supabase.from('categories').insert([newCategory]);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to add category:', err);
-      showDialog({
-        title: 'Error',
-        message: 'Failed to create new category. Please check your connection.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const updateCategory = async (c: Category) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { error } = await supabase.from('categories').update(c).eq('id', c.id);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to update category:', err);
-      showDialog({
-        title: 'Error',
-        message: 'Failed to update category details.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const deleteCategory = async (id: string) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { error } = await supabase.from('categories').delete().eq('id', id);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to delete category:', err);
-      showDialog({
-        title: 'Error',
-        message: 'Failed to remove category.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const addInvoice = async (inv: Invoice) => {
-    // Local Update First
-    const updatedProducts = [...state.products];
-    inv.items.forEach(item => {
-      const prodIdx = updatedProducts.findIndex(p => p.id === item.productId);
-      if (prodIdx !== -1) {
-        updatedProducts[prodIdx].stock += (inv.type === 'sale' ? -item.quantity : item.quantity);
-      }
-    });
-
-    setState(prev => ({
-      ...prev,
-      invoices: [inv, ...prev.invoices],
-      products: updatedProducts
-    }));
-
-    if (isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { items, id, entityId, entityName, paidAmount, ...header } = inv;
-        const dbHeader = { 
-          ...header, 
-          entity_id: entityId, 
-          entity_name: entityName, 
-          paid_amount: paidAmount 
-        };
-
-        const { data: invData, error: invError } = await supabase.from('invoices').insert([dbHeader]).select();
-        if (invError) throw invError;
-
-        const itemsToInsert = items.map(item => ({
-          invoice_id: invData[0].id,
-          product_id: item.productId,
-          product_name: item.productName,
-          quantity: item.quantity,
-          unit_price: item.unitPrice,
-          cost: item.cost,
-          total: item.total
-        }));
-        
-        const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
-        if (itemsError) throw itemsError;
-
-        // Stock is already updated locally, Supabase stock should be updated too
-        for (const item of items) {
-          const prod = updatedProducts.find(p => p.id === item.productId);
-          if (prod) {
-            await supabase.from('products').update({ stock: prod.stock }).eq('id', prod.id);
-          }
-        }
-      } catch (error: any) {
-        console.error('Invoice Cloud Save Failed:', error);
-        showDialog({
-          title: 'Cloud Storage Error',
-          message: `Failed to save invoice to cloud: ${error?.message || 'Unknown network error'}`,
-          onConfirm: hideDialog,
-          isAlert: true,
-          variant: 'danger'
-        });
-      } finally {
-        setIsSyncing(false);
-      }
-    }
-  };
-
-  const updateInvoice = async (inv: Invoice) => {
-    setState(prev => ({ 
-      ...prev, 
-      invoices: prev.invoices.map(i => i.id === inv.id ? inv : i) 
-    }));
-
-    if (isSupabaseConfigured && supabase) {
-      setIsSyncing(true);
-      try {
-        const { items, ...header } = inv;
-        const dbHeader = { 
-          number: header.number,
-          type: header.type,
-          entity_id: header.entityId,
-          entity_name: header.entityName,
-          subtotal: header.subtotal,
-          total: header.total,
-          paid_amount: header.paidAmount,
-          status: header.status
-        };
-        const { error } = await supabase.from('invoices').update(dbHeader).eq('id', inv.id);
-        if (error) throw error;
-      } catch (error: any) {
-        console.error('Invoice Cloud Update Failed:', error);
-        showDialog({
-          title: 'Update Failed',
-          message: `Cloud update failed: ${error?.message || 'Unknown network error'}`,
-          onConfirm: hideDialog,
-          isAlert: true,
-          variant: 'danger'
-        });
-      } finally {
-        setIsSyncing(false);
-      }
-    }
-  };
-
-
-  const addCashTransaction = async (t_item: any) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { id, ...newT } = t_item;
-      const { error } = await supabase.from('cash_transactions').insert([newT]);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to add transaction:', err);
-      showDialog({
-        title: 'Finance Error',
-        message: 'Failed to record cash transaction. Please verify connectivity.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const deleteCashTransaction = async (id: string) => {
-    if (!isSupabaseConfigured || !supabase) return;
-    setIsSyncing(true);
-    try {
-      const { error } = await supabase.from('cash_transactions').delete().eq('id', id);
-      if (error) throw error;
-      await fetchData(true);
-    } catch (err: any) {
-      console.error('Failed to delete transaction:', err);
-      showDialog({
-        title: 'Error',
-        message: 'Failed to remove transaction record.',
-        onConfirm: hideDialog,
-        isAlert: true,
-        variant: 'danger'
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -586,7 +59,7 @@ const App: React.FC = () => {
     );
   }
 
-  if (!state.user) return <LoginPage onLogin={handleLogin} />;
+  if (!state.user) return <LoginPage onLogin={login} />;
 
   const navGroups = [
     {
@@ -613,6 +86,7 @@ const App: React.FC = () => {
       title: t('nav.finance'),
       items: [
         { path: '/invoices', label: t('common.invoices'), icon: <FileText size={20} /> },
+        { path: '/pos', label: 'Terminal', icon: <ShoppingCart size={20} /> },
         { path: '/cash', label: t('nav.cash'), icon: <Wallet size={20} /> },
       ]
     }
@@ -623,7 +97,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50 text-slate-900 transition-colors duration-300 overflow-x-hidden">
-      
+
 
       {/* Mobile Header */}
       <header className="lg:hidden h-16 bg-indigo-950 text-white flex items-center justify-between px-4 sticky top-0 z-50 no-print">
@@ -650,16 +124,15 @@ const App: React.FC = () => {
           <div className="p-2 bg-sky-500 rounded-lg"><Stethoscope size={24} /></div>
           <span className="font-bold text-xl tracking-tight">DentaStock</span>
         </div>
-        
+
         <nav className="flex-grow py-6 px-4 space-y-6 overflow-y-auto">
           {navGroups.map((group, idx) => (
             <div key={idx}>
               <h3 className="px-4 mb-2 text-xs font-bold text-indigo-400 uppercase tracking-wider">{group.title}</h3>
               <div className="space-y-1">
                 {group.items.map(item => (
-                  <Link key={item.path} to={item.path} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    isActive(item.path) ? 'bg-sky-600 text-white shadow-lg' : 'text-indigo-300 hover:bg-indigo-900/50 hover:text-white'
-                  }`}>
+                  <Link key={item.path} to={item.path} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive(item.path) ? 'bg-sky-600 text-white shadow-lg' : 'text-indigo-300 hover:bg-indigo-900/50 hover:text-white'
+                    }`}>
                     {item.icon}
                     <span className="font-medium">{item.label}</span>
                   </Link>
@@ -673,7 +146,7 @@ const App: React.FC = () => {
           <Link to="/invoice/new/sale" className="w-full flex items-center justify-center gap-2 bg-sky-50 text-indigo-950 px-4 py-4 rounded-xl font-bold hover:bg-white shadow-xl">
             <Plus size={18} /> {t('nav.newSale')}
           </Link>
-          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-indigo-400 py-3 rounded-xl font-bold hover:text-white hover:bg-white/5 transition-all text-sm">
+          <button onClick={logout} className="w-full flex items-center justify-center gap-2 text-indigo-400 py-3 rounded-xl font-bold hover:text-white hover:bg-white/5 transition-all text-sm">
             <LogOut size={16} /> {t('nav.endSession')}
           </button>
         </div>
@@ -685,7 +158,7 @@ const App: React.FC = () => {
       <main id="root-main" className="flex-grow flex flex-col min-w-0 min-h-screen">
         <header className="hidden lg:flex h-16 bg-white border-b border-slate-200 items-center justify-end px-8 no-print sticky top-0 z-20">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
               className="px-3 py-1.5 rounded-xl bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-colors border border-slate-100"
             >
@@ -693,7 +166,7 @@ const App: React.FC = () => {
             </button>
 
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setIsAlertsOpen(!isAlertsOpen)}
                 className={`p-2 rounded-xl transition-all relative ${isAlertsOpen ? 'bg-rose-50 text-rose-600' : 'text-slate-400 hover:text-sky-600 hover:bg-slate-50'}`}
               >
@@ -724,8 +197,8 @@ const App: React.FC = () => {
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{p.category}</span>
-                              <Link 
-                                to={`/invoice/new/purchase`} 
+                              <Link
+                                to={`/invoice/new/purchase`}
                                 onClick={() => setIsAlertsOpen(false)}
                                 className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity"
                               >
@@ -752,15 +225,16 @@ const App: React.FC = () => {
 
         <div className="p-4 lg:p-8 flex-grow">
           <Routes>
-            <Route path="/" element={<Dashboard state={state} />} />
-            <Route path="/products" element={<ProductsPage products={state.products} categories={state.categories} onAdd={addProduct} onUpdate={updateProduct} onDelete={deleteProduct} showDialog={showDialog} />} />
-            <Route path="/categories" element={<CategoriesPage categories={state.categories} onAdd={addCategory} onUpdate={updateCategory} onDelete={deleteCategory} showDialog={showDialog} />} />
-            <Route path="/clients" element={<EntitiesPage type="client" entities={state.entities.filter(e => e.type === 'client')} invoices={state.invoices} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} showDialog={showDialog} />} />
-            <Route path="/suppliers" element={<EntitiesPage type="supplier" entities={state.entities.filter(e => e.type === 'supplier')} invoices={state.invoices} onAdd={addEntity} onUpdate={updateEntity} onDelete={deleteEntity} showDialog={showDialog} />} />
-            <Route path="/invoices" element={<InvoicesPage invoices={state.invoices} />} />
-            <Route path="/invoice/new/:type" element={<InvoiceCreator products={state.products} entities={state.entities} onSave={addInvoice} showDialog={showDialog} />} />
-            <Route path="/invoice/view/:id" element={<InvoiceDetail invoices={state.invoices} entities={state.entities} onUpdate={updateInvoice} />} />
-            <Route path="/cash" element={<CashManagement transactions={state.cashTransactions} onAdd={addCashTransaction} onDelete={deleteCashTransaction} showDialog={showDialog} />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/clients" element={<EntitiesPage type="client" />} />
+            <Route path="/suppliers" element={<EntitiesPage type="supplier" />} />
+            <Route path="/invoices" element={<InvoicesPage />} />
+            <Route path="/pos" element={<POS />} />
+            <Route path="/invoice/new/:type" element={<InvoiceCreator />} />
+            <Route path="/invoice/view/:id" element={<InvoiceDetail />} />
+            <Route path="/cash" element={<CashManagement />} />
           </Routes>
         </div>
       </main>
@@ -799,6 +273,9 @@ const App: React.FC = () => {
         </div>
         <Link to="/categories" className={`flex flex-col items-center gap-1 ${isActive('/categories') ? 'text-sky-600' : 'text-slate-400'}`}>
           <Layers size={22} /><span className="text-[10px] font-black uppercase">Cats</span>
+        </Link>
+        <Link to="/pos" className={`flex flex-col items-center gap-1 ${isActive('/pos') ? 'text-sky-600' : 'text-slate-400'}`}>
+          <ShoppingCart size={22} /><span className="text-[10px] font-black uppercase">POS</span>
         </Link>
         <Link to="/invoices" className={`flex flex-col items-center gap-1 ${isActive('/invoices') ? 'text-sky-600' : 'text-slate-400'}`}>
           <FileText size={22} /><span className="text-[10px] font-black uppercase">Ledger</span>

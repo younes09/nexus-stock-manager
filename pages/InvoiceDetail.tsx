@@ -4,15 +4,17 @@ import { useLanguage } from '../LanguageContext';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Invoice, Entity } from '../types';
 import { ChevronLeft, Printer, FileText, Calendar, User, MapPin, Phone, Mail, Stethoscope } from 'lucide-react';
+import { useAppContext } from '../AppContext';
 
-interface Props {
-  invoices: Invoice[];
-  entities: Entity[];
-  onUpdate: (inv: Invoice) => void;
-}
+interface Props { }
 
-const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
+const InvoiceDetail: React.FC<Props> = () => {
   const { t } = useLanguage();
+  const { state, updateInvoice } = useAppContext();
+  const { invoices, entities } = {
+    invoices: state.invoices.data,
+    entities: state.entities
+  };
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const invoice = invoices.find(inv => inv.id === id);
@@ -42,20 +44,19 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
         </button>
         <div className="flex gap-2">
           {invoice.type === 'sale' && (
-            <button 
+            <button
               onClick={() => setIsProforma(!isProforma)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-2xl font-bold transition-all border-2 ${
-                isProforma 
-                  ? 'bg-amber-50 border-amber-200 text-amber-600' 
+              className={`flex items-center gap-2 px-4 py-3 rounded-2xl font-bold transition-all border-2 ${isProforma
+                  ? 'bg-amber-50 border-amber-200 text-amber-600'
                   : 'bg-slate-50 border-slate-100 text-slate-400'
-              }`}
+                }`}
             >
               <FileText size={18} />
               {t('invoices.proforma')}
             </button>
           )}
-          <button 
-            onClick={() => window.print()} 
+          <button
+            onClick={() => window.print()}
             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-500/30"
           >
             <Printer size={18} />
@@ -103,9 +104,8 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
             <div className="grid grid-cols-2 gap-x-6 sm:gap-x-12 gap-y-4 sm:gap-y-6 bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-100 min-w-fit">
               <div>
                 <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('common.status')}</span>
-                <span className={`inline-flex items-center gap-2 font-black text-[10px] sm:text-xs uppercase tracking-widest ${
-                  invoice.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
-                }`}>
+                <span className={`inline-flex items-center gap-2 font-black text-[10px] sm:text-xs uppercase tracking-widest ${invoice.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
+                  }`}>
                   <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${invoice.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                   {t('common.' + invoice.status)}
                 </span>
@@ -139,7 +139,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
                   <p className="text-sm text-rose-600 font-bold">{(invoice.total - invoice.paidAmount).toLocaleString()} {t('common.currency')} {t('invoiceDetail.remaining')}</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => { setPaymentAmount(invoice.total - invoice.paidAmount); setIsPaying(true); }}
                 className="w-full sm:w-auto px-8 py-3 bg-rose-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-500/20 transition-all"
               >
@@ -218,25 +218,25 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
           <div className="bg-white rounded-[2.5rem] p-8 lg:p-12 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
             <h3 className="text-2xl font-black text-slate-900 mb-2">{t('invoiceDetail.settleBalance')}</h3>
             <p className="text-slate-500 text-sm font-bold mb-8">{t('invoiceDetail.recordPayment')} - {invoice.number}</p>
-            
+
             <div className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">{t('common.paid')} (DA)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(Number(e.target.value))}
                   max={invoice.total - invoice.paidAmount}
                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-xl font-black text-slate-900 focus:ring-4 focus:ring-indigo-500/10 outline-none"
                 />
               </div>
-              
+
               <div className="flex gap-3 pt-4">
                 <button onClick={() => setIsPaying(false)} className="flex-1 py-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition-all">{t('common.cancel')}</button>
-                <button 
+                <button
                   onClick={() => {
                     const newPaid = invoice.paidAmount + paymentAmount;
-                    onUpdate({
+                    updateInvoice({
                       ...invoice,
                       paidAmount: newPaid,
                       status: newPaid >= invoice.total ? 'paid' : 'pending'
@@ -252,7 +252,7 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
           </div>
         </div>
       )}
-      
+
       <style>{`
         @media print {
           @page {
@@ -306,10 +306,10 @@ const InvoiceDetail: React.FC<Props> = ({ invoices, entities, onUpdate }) => {
           .opacity-20, .decorative-branding { display: none !important; }
         }
       `}</style>
-      
+
       {/* Decorative Branding */}
       <div className="text-center py-10 opacity-20 pointer-events-none no-print">
-         <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400">{t('invoiceDetail.generatedBy')}</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400">{t('invoiceDetail.generatedBy')}</p>
       </div>
     </div>
   );

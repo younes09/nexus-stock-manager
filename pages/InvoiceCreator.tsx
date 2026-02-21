@@ -5,16 +5,14 @@ import { Product, Entity, Invoice, InvoiceItem, InvoiceType } from '../types';
 import { Plus, Trash2, Printer, Save, ChevronLeft, FileText, AlertCircle, Scan, X, Zap, ZapOff } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useLanguage } from '../LanguageContext';
+import { useAppContext } from '../AppContext';
 
-interface Props {
-  products: Product[];
-  entities: Entity[];
-  onSave: (inv: Invoice) => void;
-  showDialog: (config: any) => void;
-}
+interface Props { }
 
-const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialog }) => {
+const InvoiceCreator: React.FC<Props> = () => {
   const { t } = useLanguage();
+  const { state, addInvoice, showDialog } = useAppContext();
+  const { products, entities } = state;
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
   const invoiceType = (type === 'purchase' ? 'purchase' : 'sale') as InvoiceType;
@@ -27,7 +25,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
   const [hasTorch, setHasTorch] = useState(false);
   const [paidAmount, setPaidAmount] = useState(0);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  
+
   const filteredEntities = entities.filter(e => e.type === (invoiceType === 'sale' ? 'client' : 'supplier'));
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
@@ -85,7 +83,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
             handleScanSuccess(decodedText);
             stopScanner();
           },
-          () => {} 
+          () => { }
         );
 
         try {
@@ -101,7 +99,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
         showDialog({
           title: "Camera Access",
           message: t('invoiceCreator.cameraAccessFailed'),
-          onConfirm: () => {},
+          onConfirm: () => { },
           isAlert: true,
           variant: 'danger'
         });
@@ -158,7 +156,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
       showDialog({
         title: "Product Search",
         message: t('invoiceCreator.scannedProductNotFound').replace('{sku}', sku),
-        onConfirm: () => {},
+        onConfirm: () => { },
         isAlert: true,
         variant: 'warning'
       });
@@ -201,7 +199,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
       showDialog({
         title: "Medical Ledger Error",
         message: "Please specify a billing entity and add clinical supplies before saving.",
-        onConfirm: () => {},
+        onConfirm: () => { },
         isAlert: true,
         variant: 'warning'
       });
@@ -209,7 +207,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
     }
 
     const entity = entities.find(e => e.id === selectedEntityId)!;
-    
+
     const invoice: Invoice = {
       id: Date.now().toString(),
       number: invoiceNumber,
@@ -224,7 +222,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
       status: paidAmount >= total ? 'paid' : 'pending'
     };
 
-    onSave(invoice);
+    addInvoice(invoice);
     navigate('/invoices');
   };
 
@@ -252,14 +250,14 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
           <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
             <div className="absolute top-8 right-8 flex gap-3">
               {hasTorch && (
-                <button 
+                <button
                   onClick={toggleTorch}
                   className={`p-3 rounded-full backdrop-blur-md transition-all ${isTorchOn ? 'bg-amber-400 text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
                 >
                   {isTorchOn ? <Zap size={24} /> : <ZapOff size={24} />}
                 </button>
               )}
-              <button 
+              <button
                 onClick={stopScanner}
                 className="p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors"
               >
@@ -315,8 +313,8 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
           <div className="space-y-4">
             <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Billing Entity</h3>
             <div className="relative group">
-              <select 
-                value={selectedEntityId} 
+              <select
+                value={selectedEntityId}
                 onChange={(e) => setSelectedEntityId(e.target.value)}
                 className="w-full text-xl font-black text-slate-900 bg-slate-50 rounded-2xl border-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer py-4 px-5 appearance-none shadow-sm"
               >
@@ -357,8 +355,8 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
           <div className="space-y-4 lg:space-y-2">
             {items.map((item, idx) => (
               <div key={idx} className="flex flex-col lg:grid lg:grid-cols-12 gap-4 bg-slate-50 lg:bg-transparent p-5 lg:p-0 rounded-3xl lg:rounded-none border border-slate-100 lg:border-none relative">
-                <button 
-                  onClick={() => removeItem(idx)} 
+                <button
+                  onClick={() => removeItem(idx)}
                   className="lg:hidden absolute top-4 right-4 p-2 text-rose-300 bg-white rounded-xl shadow-sm"
                 >
                   <Trash2 size={18} />
@@ -366,7 +364,7 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
 
                 <div className="lg:col-span-5">
                   <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block">Product</label>
-                  <select 
+                  <select
                     value={item.productId}
                     onChange={(e) => updateItem(idx, 'productId', e.target.value)}
                     className="w-full bg-white lg:bg-slate-50 border-none rounded-2xl font-black text-slate-900 py-3.5 px-5 focus:ring-4 focus:ring-indigo-500/10 shadow-sm"
@@ -380,8 +378,8 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
 
                 <div className="lg:col-span-2 flex flex-col items-center">
                   <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block w-full text-center">{t('invoiceCreator.quantity')}</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     min="1"
                     value={item.quantity}
                     onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
@@ -391,8 +389,8 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
 
                 <div className="lg:col-span-2">
                   <label className="lg:hidden text-[10px] font-black text-slate-400 uppercase mb-1 block text-right">{t('invoiceCreator.unitPrice')}</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     step="0.01"
                     value={item.unitPrice}
                     onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)}
@@ -418,15 +416,15 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 mt-8">
-          <button 
+          <button
             onClick={addItem}
             className="flex-grow flex items-center justify-center gap-3 border-4 border-dashed border-slate-100 text-slate-300 py-6 lg:py-8 rounded-[2.5rem] hover:border-indigo-200 hover:text-indigo-400 hover:bg-indigo-50/50 transition-all font-black uppercase text-xs tracking-widest no-print"
           >
             <Plus size={24} />
             {t('invoiceCreator.manualEntry')}
           </button>
-          
-          <button 
+
+          <button
             onClick={startScanner}
             className="flex-grow flex items-center justify-center gap-3 border-4 border-dashed border-indigo-100 text-indigo-300 py-6 lg:py-8 rounded-[2.5rem] hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50 transition-all font-black uppercase text-xs tracking-widest no-print"
           >
@@ -454,8 +452,8 @@ const InvoiceCreator: React.FC<Props> = ({ products, entities, onSave, showDialo
             </div>
             <div className="pt-6 space-y-3">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoiceCreator.amountPaid')}</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 value={paidAmount}
                 onChange={(e) => setPaidAmount(Number(e.target.value))}
                 className="w-full text-right bg-white border border-slate-200 rounded-2xl font-black py-3 px-5 focus:ring-4 focus:ring-indigo-500/10 outline-none"

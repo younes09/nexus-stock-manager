@@ -1,24 +1,27 @@
 
 import React, { useState, useMemo } from 'react';
 import { Invoice } from '../types';
-import { 
-  FileText, 
-  Eye, 
-  Calendar, 
-  User, 
-  Filter, 
-  X, 
+import {
+  FileText,
+  Eye,
+  Calendar,
+  User,
+  Filter,
+  X,
   Search
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
+import { useAppContext } from '../AppContext';
 
 interface Props {
-  invoices: Invoice[];
+  // invoices: Invoice[]; // Removed to use context
 }
 
-const InvoicesPage: React.FC<Props> = ({ invoices }) => {
+const InvoicesPage: React.FC<Props> = () => {
   const { t } = useLanguage();
+  const { state, fetchInvoices, isSyncing } = useAppContext();
+  const { data: invoices, pagination } = state.invoices;
   // Filter States
   const [filterType, setFilterType] = useState<string>('all');
   const [filterEntity, setFilterEntity] = useState<string>('all');
@@ -37,9 +40,9 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
     return invoices.filter(inv => {
       const matchesType = filterType === 'all' || inv.type === filterType;
       const matchesEntity = filterEntity === 'all' || inv.entityName === filterEntity;
-      const matchesSearch = inv.number.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            inv.entityName.toLowerCase().includes(searchTerm.toLowerCase());
-      
+      const matchesSearch = inv.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.entityName.toLowerCase().includes(searchTerm.toLowerCase());
+
       const invDate = new Date(inv.date);
       const matchesStart = !startDate || invDate >= new Date(startDate);
       const matchesEnd = !endDate || invDate <= new Date(endDate + 'T23:59:59');
@@ -66,13 +69,13 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
           <p className="text-sm lg:text-base text-slate-500">{t('invoices.subtitle')}</p>
         </div>
         <div className="flex w-full sm:w-auto gap-2 lg:gap-3">
-          <Link 
+          <Link
             to="/invoice/new/purchase"
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-3.5 lg:py-3 rounded-2xl font-bold hover:bg-slate-50 transition-all shadow-sm text-sm"
           >
             {t('invoices.buyStock')}
           </Link>
-          <Link 
+          <Link
             to="/invoice/new/sale"
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-3.5 lg:py-3 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/30 text-sm"
           >
@@ -89,7 +92,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
             <h2 className="text-xs font-black uppercase tracking-widest">{t('invoices.filters')}</h2>
           </div>
           {isFiltered && (
-            <button 
+            <button
               onClick={resetFilters}
               className="flex items-center gap-1.5 text-rose-500 font-bold text-[10px] uppercase tracking-widest hover:text-rose-600 transition-colors"
             >
@@ -104,7 +107,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('invoices.searchLedger')}</label>
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
-              <input 
+              <input
                 type="text"
                 placeholder={t('invoices.searchLedger')}
                 value={searchTerm}
@@ -118,14 +121,14 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
           <div className="space-y-2 lg:col-span-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('invoices.dateRange')}</label>
             <div className="flex items-center gap-2">
-              <input 
+              <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
               />
               <span className="text-slate-300 font-bold">{t('invoices.to')}</span>
-              <input 
+              <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
@@ -137,7 +140,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
           {/* Type Filter */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('invoices.classification')}</label>
-            <select 
+            <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
               className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all appearance-none cursor-pointer"
@@ -151,7 +154,7 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
           {/* Entity Filter */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('invoices.billingEntity')}</label>
-            <select 
+            <select
               value={filterEntity}
               onChange={(e) => setFilterEntity(e.target.value)}
               className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all appearance-none cursor-pointer"
@@ -190,33 +193,31 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                     </div>
                   </div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
-                  inv.type === 'sale' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'
-                }`}>
+                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${inv.type === 'sale' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'
+                  }`}>
                   {inv.type === 'purchase' ? t('invoices.supplyOrders') : t('invoices.practiceSales')}
                 </div>
               </div>
 
               <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <User size={14} className="text-slate-400" />
-                      <span className="text-sm font-bold text-slate-700 truncate max-w-[140px]">{inv.entityName}</span>
-                    </div>
-                    <div className="text-lg font-black text-slate-900">{inv.total.toLocaleString()} {t('common.currency')}</div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User size={14} className="text-slate-400" />
+                    <span className="text-sm font-bold text-slate-700 truncate max-w-[140px]">{inv.entityName}</span>
                   </div>
-                  {inv.total - (inv.paidAmount || 0) > 0 && (
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoices.balance')}:</span>
-                      <span className="text-sm font-black text-rose-500">{(inv.total - (inv.paidAmount || 0)).toLocaleString()} {t('common.currency')}</span>
-                    </div>
-                  )}
+                  <div className="text-lg font-black text-slate-900">{inv.total.toLocaleString()} {t('common.currency')}</div>
+                </div>
+                {inv.total - (inv.paidAmount || 0) > 0 && (
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('invoices.balance')}:</span>
+                    <span className="text-sm font-black text-rose-500">{(inv.total - (inv.paidAmount || 0)).toLocaleString()} {t('common.currency')}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
-                <div className={`flex items-center gap-1.5 font-black text-[10px] uppercase tracking-[0.15em] ${
-                  inv.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
-                }`}>
+                <div className={`flex items-center gap-1.5 font-black text-[10px] uppercase tracking-[0.15em] ${inv.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
+                  }`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                   {t('common.' + inv.status)}
                 </div>
@@ -265,9 +266,8 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                   </td>
                   <td className="px-8 py-5 font-bold text-slate-700">{inv.entityName}</td>
                   <td className="px-8 py-5">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
-                      inv.type === 'sale' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${inv.type === 'sale' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
                       {inv.type === 'purchase' ? t('invoices.supplyOrders') : t('invoices.practiceSales')}
                     </span>
                   </td>
@@ -275,16 +275,14 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
                     <div className="text-sm font-black text-slate-900">{inv.total.toLocaleString()} {t('common.currency')}</div>
                   </td>
                   <td className="px-8 py-5">
-                    <div className={`text-sm font-black ${
-                      (inv.total - (inv.paidAmount || 0)) > 0 ? 'text-rose-500' : 'text-emerald-500'
-                    }`}>
+                    <div className={`text-sm font-black ${(inv.total - (inv.paidAmount || 0)) > 0 ? 'text-rose-500' : 'text-emerald-500'
+                      }`}>
                       {(inv.total - (inv.paidAmount || 0)).toLocaleString()} {t('common.currency')}
                     </div>
                   </td>
                   <td className="px-8 py-5">
-                    <span className={`flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-widest ${
-                      inv.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
-                    }`}>
+                    <span className={`flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-widest ${inv.status === 'paid' ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
                       <div className={`w-1.5 h-1.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`}></div>
                       {t('common.' + inv.status)}
                     </span>
@@ -300,6 +298,43 @@ const InvoicesPage: React.FC<Props> = ({ invoices }) => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white px-8 py-5 rounded-2xl border border-slate-200 mt-6 shadow-sm">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            {t('common.showing')} {(pagination.page - 1) * (pagination.limit || 50) + 1} - {Math.min(pagination.page * (pagination.limit || 50), pagination.total)} {t('common.of')} {pagination.total}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={pagination.page <= 1 || isSyncing}
+              onClick={() => fetchInvoices(pagination.page - 1, pagination.limit || 50)}
+              className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {t('common.previous')}
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(p => (
+                <button
+                  key={p}
+                  disabled={isSyncing}
+                  onClick={() => fetchInvoices(p, pagination.limit || 50)}
+                  className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${pagination.page === p ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'}`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={pagination.page >= pagination.totalPages || isSyncing}
+              onClick={() => fetchInvoices(pagination.page + 1, pagination.limit || 50)}
+              className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {t('common.next')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

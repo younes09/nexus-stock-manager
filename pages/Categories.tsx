@@ -1,19 +1,16 @@
 
 import React, { useState } from 'react';
 import { Category } from '../types';
-import { Plus, Edit2, Trash2, Layers, X, Folder, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Layers, X, Folder } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { useAppContext } from '../AppContext';
 
-interface Props {
-  categories: Category[];
-  onAdd: (c: Category) => void;
-  onUpdate: (c: Category) => void;
-  onDelete: (id: string) => void;
-  showDialog: (config: any) => void;
-}
+interface Props { }
 
-const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete, showDialog }) => {
+const CategoriesPage: React.FC<Props> = () => {
   const { t } = useLanguage();
+  const { state, addCategory, updateCategory, deleteCategory, showDialog } = useAppContext();
+  const { categories } = state;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -26,11 +23,11 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
     };
 
     if (editingCategory) {
-      onUpdate(category);
+      updateCategory(category);
     } else {
-      onAdd(category);
+      addCategory(category);
     }
-    
+
     setIsModalOpen(false);
     setEditingCategory(null);
   };
@@ -48,7 +45,7 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
           </div>
           <p className="text-sm font-bold text-slate-400">{t('categories.subtitle')}</p>
         </div>
-        <button 
+        <button
           onClick={() => { setEditingCategory(null); setIsModalOpen(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-3 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.1em] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-95 transition-transform"
         >
@@ -67,7 +64,7 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
             <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center font-black shadow-inner group-hover:bg-sky-600 group-hover:text-white transition-all duration-500 flex-shrink-0">
               <Folder size={24} strokeWidth={2.5} />
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <h3 className="text-lg font-black text-slate-900 truncate leading-tight">{c.name}</h3>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 truncate flex items-center gap-2">
@@ -78,20 +75,20 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
 
             {/* Tap-friendly Quick Actions */}
             <div className="flex items-center gap-2">
-              <button 
-                onClick={() => { setEditingCategory(c); setIsModalOpen(true); }} 
+              <button
+                onClick={() => { setEditingCategory(c); setIsModalOpen(true); }}
                 className="p-3 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-xl transition-all active:scale-90"
                 title={t('common.edit')}
               >
                 <Edit2 size={18} />
               </button>
-              <button 
+              <button
                 onClick={() => showDialog({
                   title: t('common.confirmDelete'),
                   message: t('categories.deleteMessage'),
-                  onConfirm: () => onDelete(c.id),
+                  onConfirm: () => deleteCategory(c.id),
                   variant: 'danger'
-                })} 
+                })}
                 className="p-3 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 rounded-xl transition-all active:scale-90"
                 title={t('common.delete')}
               >
@@ -125,7 +122,7 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
       {/* Enhanced Modal (Native Bottom Sheet feel on mobile) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-slate-950/40 backdrop-blur-md p-0 sm:p-4">
-          <div 
+          <div
             className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
             onClick={(e) => e.stopPropagation()}
           >
@@ -142,8 +139,8 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Medical Inventory</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsModalOpen(false)} 
+              <button
+                onClick={() => setIsModalOpen(false)}
                 className="p-3 text-slate-400 hover:text-slate-900 bg-slate-50 rounded-full transition-all active:scale-95"
               >
                 <X size={20} />
@@ -157,28 +154,28 @@ const CategoriesPage: React.FC<Props> = ({ categories, onAdd, onUpdate, onDelete
                     {t('common.name')}
                   </label>
                   <div className="relative group">
-                    <input 
-                        name="name" 
-                        defaultValue={editingCategory?.name} 
-                        required 
-                        autoFocus
-                        placeholder={`${t('common.name')}...`}
-                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500/20 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all font-bold text-slate-900 placeholder:text-slate-300" 
+                    <input
+                      name="name"
+                      defaultValue={editingCategory?.name}
+                      required
+                      autoFocus
+                      placeholder={`${t('common.name')}...`}
+                      className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500/20 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all font-bold text-slate-900 placeholder:text-slate-300"
                     />
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex gap-4 pt-4">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)} 
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
                   className="flex-1 px-4 py-4 rounded-2xl text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
                 >
                   {t('common.cancel')}
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 active:scale-[0.98] transition-all"
                 >
                   {t('common.save')}

@@ -3,19 +3,17 @@ import React, { useState } from 'react';
 import { Entity, EntityType } from '../types';
 import { Plus, Edit2, Trash2, Mail, Phone, MapPin, X, User } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { useAppContext } from '../AppContext';
 
 interface Props {
   type: EntityType;
-  entities: Entity[];
-  onAdd: (e: Entity) => void;
-  onUpdate: (e: Entity) => void;
-  onDelete: (id: string) => void;
-  invoices: any[];
-  showDialog: (config: any) => void;
 }
 
-const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDelete, invoices, showDialog }) => {
+const EntitiesPage: React.FC<Props> = ({ type }) => {
   const { t } = useLanguage();
+  const { state, addEntity, updateEntity, deleteEntity, showDialog } = useAppContext();
+  const entities = state.entities.filter(e => e.type === type);
+  const invoices = state.invoices.data;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
 
@@ -32,11 +30,11 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
     };
 
     if (editingEntity) {
-      onUpdate(entity);
+      updateEntity(entity);
     } else {
-      onAdd(entity);
+      addEntity(entity);
     }
-    
+
     setIsModalOpen(false);
     setEditingEntity(null);
   };
@@ -52,7 +50,7 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
             {(type === 'client' ? t('entities.clients.subtitle') : t('entities.suppliers.subtitle')).replace('{count}', entities.length.toString())}
           </p>
         </div>
-        <button 
+        <button
           onClick={() => { setEditingEntity(null); setIsModalOpen(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 lg:py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
         >
@@ -70,22 +68,22 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
               </div>
               <div className="flex gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => { setEditingEntity(e); setIsModalOpen(true); }} className="p-2.5 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-xl transition-all hover:bg-white shadow-sm"><Edit2 size={16} /></button>
-                <button 
+                <button
                   onClick={() => showDialog({
                     title: t('common.confirmDelete'),
                     message: `Are you sure you want to remove ${e.name}? This will affect all associated clinical records if not archived.`,
-                    onConfirm: () => onDelete(e.id),
+                    onConfirm: () => deleteEntity(e.id),
                     variant: 'danger'
-                  })} 
+                  })}
                   className="p-2.5 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl transition-all hover:bg-white shadow-sm"
                 >
                   <Trash2 size={16} />
                 </button>
               </div>
             </div>
-            
+
             <h3 className="text-xl font-black text-slate-900 mb-6 tracking-tight">{e.name}</h3>
-            
+
             <div className="space-y-4 pt-4 border-t border-slate-50">
               <div className="flex items-center gap-3 text-xs font-bold text-slate-500 overflow-hidden">
                 <div className="p-1.5 bg-slate-100 rounded-lg"><Mail size={14} className="text-slate-400" /></div>
@@ -99,11 +97,11 @@ const EntitiesPage: React.FC<Props> = ({ type, entities, onAdd, onUpdate, onDele
                 <div className="p-1.5 bg-slate-100 rounded-lg mt-0.5"><MapPin size={14} className="text-slate-400 flex-shrink-0" /></div>
                 <span className="line-clamp-2">{e.address}</span>
               </div>
-              
+
               {(() => {
                 const entityInvoices = invoices.filter(inv => inv.entityId === e.id);
                 const totalDebt = entityInvoices.reduce((sum, inv) => sum + (inv.total - (inv.paidAmount || 0)), 0);
-                
+
                 if (totalDebt > 0) {
                   return (
                     <div className="mt-4 p-4 bg-rose-50 rounded-2xl border border-rose-100">

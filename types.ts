@@ -67,11 +67,23 @@ export interface CashTransaction {
   category: string;
 }
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number | null;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
 export interface AppState {
   products: Product[];
   entities: Entity[];
-  invoices: Invoice[];
+  invoices: PaginatedResponse<Invoice>;
   categories: Category[];
-  cashTransactions: CashTransaction[];
+  cashTransactions: PaginatedResponse<CashTransaction>;
   user: User | null;
 }

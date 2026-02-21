@@ -4,24 +4,20 @@ import { Product, Category } from '../types';
 import { Plus, Edit2, Trash2, Search, X, Scan, Zap, ZapOff, ChevronDown, AlertTriangle } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useLanguage } from '../LanguageContext';
+import { useAppContext } from '../AppContext';
 
-interface Props {
-  products: Product[];
-  categories: Category[];
-  onAdd: (p: Product) => void;
-  onUpdate: (p: Product) => void;
-  onDelete: (id: string) => void;
-  showDialog: (config: any) => void;
-}
+interface Props { }
 
-const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, onDelete, showDialog }) => {
+const ProductsPage: React.FC<Props> = () => {
   const { t } = useLanguage();
+  const { state, addProduct, updateProduct, deleteProduct, showDialog } = useAppContext();
+  const { products, categories } = state;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
-  
+
   const [isScanning, setIsScanning] = useState(false);
   const [scannedSku, setScannedSku] = useState('');
   const [isTorchOn, setIsTorchOn] = useState(false);
@@ -32,10 +28,10 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
   // Unified Filtering Logic
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            p.sku.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.sku.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
-      
+
       let matchesStock = true;
       if (stockFilter === 'out') matchesStock = p.stock === 0;
       else if (stockFilter === 'low') matchesStock = p.stock > 0 && p.stock <= p.minStock;
@@ -56,7 +52,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
     const expiry = new Date(date);
     const now = new Date();
     const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays <= 0) return { label: 'Expired', color: 'bg-rose-500 text-white' };
     if (diffDays <= 30) return { label: `${diffDays}d Left`, color: 'bg-amber-500 text-white' };
     return { label: `Exp: ${expiry.toLocaleDateString()}`, color: 'bg-slate-100 text-slate-500' };
@@ -100,7 +96,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
     setIsScanning(true);
     setIsTorchOn(false);
     setHasTorch(false);
-    
+
     // Safety check for mobile browsers (Camera requires HTTPS or localhost)
     const isSecure = window.isSecureContext;
     if (!isSecure && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -126,7 +122,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
             setScannedSku(decodedText);
             stopScanner();
           },
-          () => {} 
+          () => { }
         );
         try {
           const capabilities = scanner.getRunningTrackCapabilities();
@@ -138,11 +134,11 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
       } catch (err) {
         console.error("Camera access failed", err);
         showDialog({
-            title: "Camera Error",
-            message: t('invoiceCreator.cameraAccessFailed'),
-            onConfirm: () => {},
-            isAlert: true,
-            variant: 'danger'
+          title: "Camera Error",
+          message: t('invoiceCreator.cameraAccessFailed'),
+          onConfirm: () => { },
+          isAlert: true,
+          variant: 'danger'
         });
         setIsScanning(false);
       }
@@ -182,7 +178,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
     const product: Product = {
       id: editingProduct?.id || Date.now().toString(),
       name: formData.get('name') as string,
-      sku: scannedSku, 
+      sku: scannedSku,
       category: formData.get('category') as string,
       price: Number(formData.get('price')),
       cost: Number(formData.get('cost')),
@@ -192,19 +188,19 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
     };
 
     if (product.category === "") {
-        showDialog({
-            title: t('common.category'),
-            message: "Please select a valid medical category for this supply.",
-            onConfirm: () => {},
-            isAlert: true,
-            variant: 'warning'
-        });
-        return;
+      showDialog({
+        title: t('common.category'),
+        message: "Please select a valid medical category for this supply.",
+        onConfirm: () => { },
+        isAlert: true,
+        variant: 'warning'
+      });
+      return;
     }
 
-    if (editingProduct) onUpdate(product);
-    else onAdd(product);
-    
+    if (editingProduct) updateProduct(product);
+    else addProduct(product);
+
     setIsModalOpen(false);
     setEditingProduct(null);
   };
@@ -223,7 +219,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
           <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">{t('products.title')}</h1>
           <p className="text-sm lg:text-base text-slate-500">{t('products.subtitle').replace('{count}', products.length.toString())}</p>
         </div>
-        <button 
+        <button
           onClick={() => { setEditingProduct(null); setIsModalOpen(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 lg:py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
         >
@@ -236,9 +232,9 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
       <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm space-y-4 lg:space-y-0 lg:flex lg:items-center lg:gap-4">
         <div className="relative flex-grow group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
-          <input 
-            type="text" 
-            placeholder={t('products.searchPlaceholder')} 
+          <input
+            type="text"
+            placeholder={t('products.searchPlaceholder')}
             className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-sm transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -247,7 +243,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
 
         <div className="grid grid-cols-2 lg:flex gap-3">
           <div className="relative group lg:w-48">
-            <select 
+            <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"
@@ -261,7 +257,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
           </div>
 
           <div className="relative group lg:w-48">
-            <select 
+            <select
               value={stockFilter}
               onChange={(e) => setStockFilter(e.target.value)}
               className="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"
@@ -276,7 +272,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
         </div>
 
         {isFiltered && (
-          <button 
+          <button
             onClick={resetFilters}
             className="w-full lg:w-auto px-6 py-3.5 text-rose-500 font-bold text-xs uppercase tracking-widest hover:bg-rose-50 rounded-2xl transition-all flex items-center justify-center gap-2"
           >
@@ -309,20 +305,20 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(p)} className="p-2 text-slate-400 hover:text-indigo-600"><Edit2 size={18} /></button>
-                    <button 
+                    <button
                       onClick={() => showDialog({
                         title: t('common.confirmDelete'),
                         message: `Are you sure you want to delete "${p.name}"? This will permanently remove its medical records.`,
-                        onConfirm: () => onDelete(p.id),
+                        onConfirm: () => deleteProduct(p.id),
                         variant: 'danger'
-                      })} 
+                      })}
                       className="p-2 text-slate-400 hover:text-rose-600"
                     >
                       <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">{t('products.stockLevel')}</span>
@@ -336,7 +332,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                     <div className="text-lg font-black text-slate-900">{p.price.toLocaleString()} DA</div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between pt-1">
                   <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-tight">
                     {p.category}
@@ -419,13 +415,13 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => openEdit(p)} className="p-2 text-slate-400 hover:text-indigo-600 transition-all"><Edit2 size={16} /></button>
-                        <button 
+                        <button
                           onClick={() => showDialog({
                             title: t('common.confirmDelete'),
                             message: `Are you sure you want to delete "${p.name}"? This action is clinicaly permanent.`,
-                            onConfirm: () => onDelete(p.id),
+                            onConfirm: () => deleteProduct(p.id),
                             variant: 'danger'
-                          })} 
+                          })}
                           className="p-2 text-slate-400 hover:text-rose-600 transition-all"
                         >
                           <Trash2 size={16} />
@@ -447,12 +443,12 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
               <h2 className="text-xl lg:text-2xl font-black text-slate-900">{editingProduct ? t('products.updateTitle') : t('products.registerTitle')}</h2>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full"><X size={20} /></button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-6 lg:p-8 space-y-6">
               {isScanning && (
                 <div className="relative bg-slate-900 rounded-3xl overflow-hidden aspect-video mb-6 border-4 border-indigo-500/20 shadow-inner flex flex-col items-center justify-center">
                   <div id="product-scanner" className={`w-full h-full ${cameraPermission !== 'granted' ? 'hidden' : ''}`}></div>
-                  
+
                   {cameraPermission === 'prompt' && (
                     <div className="text-center p-6 space-y-3">
                       <div className="loader mx-auto border-t-indigo-400"></div>
@@ -469,7 +465,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                         <p className="text-white text-sm font-black uppercase tracking-tight">{t('products.accessRestricted')}</p>
                         <p className="text-white/50 text-[10px] leading-relaxed max-w-[220px] mx-auto font-medium">{t('products.scanNotice')}</p>
                       </div>
-                      <button 
+                      <button
                         type="button"
                         onClick={startScanner}
                         className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-950/20"
@@ -496,7 +492,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                     <>
                       <div className="absolute top-4 right-4 flex gap-2 z-10">
                         {hasTorch && (
-                          <button 
+                          <button
                             type="button"
                             onClick={toggleTorch}
                             className={`p-2 rounded-full backdrop-blur-md transition-all ${isTorchOn ? 'bg-amber-400 text-black shadow-lg shadow-amber-400/20' : 'bg-white/20 text-white hover:bg-white/40'}`}
@@ -504,8 +500,8 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                             {isTorchOn ? <Zap size={16} /> : <ZapOff size={16} />}
                           </button>
                         )}
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={stopScanner}
                           className="bg-white/20 text-white p-2 rounded-full backdrop-blur-md hover:bg-white/40 transition-all"
                         >
@@ -532,24 +528,23 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                   <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.clinicalName')}</label>
                   <input name="name" defaultValue={editingProduct?.name} required placeholder="e.g., Composite Resin A3" className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
-                
+
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.skuId')}</label>
                   <div className="flex gap-2">
-                    <input 
-                      name="sku" 
-                      value={scannedSku} 
+                    <input
+                      name="sku"
+                      value={scannedSku}
                       onChange={(e) => setScannedSku(e.target.value)}
-                      required 
+                      required
                       placeholder={t('products.searchPlaceholder')}
-                      className="flex-grow px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" 
+                      className="flex-grow px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
                     />
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={isScanning ? stopScanner : startScanner}
-                      className={`px-5 rounded-2xl flex items-center justify-center transition-all shadow-md ${
-                        isScanning ? 'bg-rose-100 text-rose-600' : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      }`}
+                      className={`px-5 rounded-2xl flex items-center justify-center transition-all shadow-md ${isScanning ? 'bg-rose-100 text-rose-600' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
                     >
                       <Scan size={20} />
                     </button>
@@ -565,7 +560,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.expirySafety')}</label>
                   <input name="expiryDate" type="date" defaultValue={editingProduct?.expiryDate} className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
@@ -575,7 +570,7 @@ const ProductsPage: React.FC<Props> = ({ products, categories, onAdd, onUpdate, 
                   <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.retailPrice')}</label>
                   <input name="price" type="number" step="0.01" defaultValue={editingProduct?.price} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('products.purchaseCost')}</label>
                   <input name="cost" type="number" step="0.01" defaultValue={editingProduct?.cost} required className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />

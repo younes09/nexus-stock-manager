@@ -1,26 +1,26 @@
 import React, { useMemo, useState } from 'react';
 import { AppState, Product } from '../types';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  AreaChart, Area, PieChart, Pie, Cell 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import { TrendingUp, Activity, CalendarOff, ShieldAlert, Package, Layers, Plus, ShoppingCart, Truck } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { Link } from 'react-router-dom';
+import { useAppContext } from '../AppContext';
 
-interface Props {
-  state: AppState;
-}
+interface Props { }
 
-const Dashboard: React.FC<Props> = ({ state }) => {
+const Dashboard: React.FC<Props> = () => {
   const { t } = useLanguage();
+  const { state } = useAppContext();
 
   const metrics = useMemo(() => {
-    const totalSales = state.invoices
+    const totalSales = state.invoices.data
       .filter(i => i.type === 'sale')
       .reduce((sum, i) => sum + i.total, 0);
-    
-    const totalPurchases = state.invoices
+
+    const totalPurchases = state.invoices.data
       .filter(i => i.type === 'purchase')
       .reduce((sum, i) => sum + i.total, 0);
 
@@ -28,7 +28,7 @@ const Dashboard: React.FC<Props> = ({ state }) => {
 
     // Calculate profit (Revenue - COGS)
     let cogs = 0;
-    state.invoices.filter(i => i.type === 'sale').forEach(inv => {
+    state.invoices.data.filter(i => i.type === 'sale').forEach(inv => {
       inv.items.forEach(item => {
         cogs += (item.cost * item.quantity);
       });
@@ -37,17 +37,17 @@ const Dashboard: React.FC<Props> = ({ state }) => {
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
     const expiringItems = state.products.filter(p => p.expiryDate && new Date(p.expiryDate) <= thirtyDaysFromNow);
-    
+
     return { totalSales, totalPurchases, lowStockItems, expiringCount: expiringItems.length, profit: totalSales - cogs, totalProducts: state.products.length };
   }, [state]);
 
   const salesData = useMemo(() => {
-    return state.invoices
+    return state.invoices.data
       .filter(i => i.type === 'sale')
       .slice(-7)
       .reverse()
       .map(i => ({ date: i.date.split('T')[0], amount: i.total }));
-  }, [state.invoices]);
+  }, [state.invoices.data]);
 
   const stockDistribution = useMemo(() => {
     return state.products.slice(0, 5).map(p => ({ name: p.name, stock: p.stock }));
@@ -78,8 +78,8 @@ const Dashboard: React.FC<Props> = ({ state }) => {
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4">{t('dashboard.quickActions')}</h3>
         <div className="flex flex-wrap gap-4">
-          <Link 
-            to="/invoice/new/sale" 
+          <Link
+            to="/invoice/new/sale"
             className="flex-1 min-w-[160px] flex items-center gap-4 p-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-2xl transition-all group"
           >
             <div className="p-3 bg-indigo-600 text-white rounded-xl group-hover:scale-110 transition-transform">
@@ -92,8 +92,8 @@ const Dashboard: React.FC<Props> = ({ state }) => {
             <Plus className="ml-auto text-indigo-300" size={18} />
           </Link>
 
-          <Link 
-            to="/invoice/new/purchase" 
+          <Link
+            to="/invoice/new/purchase"
             className="flex-1 min-w-[160px] flex items-center gap-4 p-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl transition-all group"
           >
             <div className="p-3 bg-emerald-600 text-white rounded-xl group-hover:scale-110 transition-transform">
@@ -118,18 +118,18 @@ const Dashboard: React.FC<Props> = ({ state }) => {
               <AreaChart data={salesData} margin={{ left: 10 }}>
                 <defs>
                   <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: number) => [`${value.toLocaleString()} DA`, 'Amount']}
-                  contentStyle={{ 
-                    borderRadius: '16px', 
-                    border: 'none', 
+                  contentStyle={{
+                    borderRadius: '16px',
+                    border: 'none',
                     boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                     backgroundColor: '#ffffff',
                     color: '#1e293b'
@@ -160,9 +160,9 @@ const Dashboard: React.FC<Props> = ({ state }) => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    borderRadius: '12px', 
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '12px',
                     backgroundColor: '#ffffff',
                     border: 'none',
                     color: '#1e293b'

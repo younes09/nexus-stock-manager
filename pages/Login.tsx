@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Stethoscope, Lock, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { User as UserType } from '../types';
-import { supabase, isSupabaseConfigured } from '../supabase';
+import { api } from '../api';
 
 interface Props {
   onLogin: (user: UserType) => void;
@@ -20,33 +20,26 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
     setLoading(true);
     setError('');
 
-    if (!isSupabaseConfigured || !supabase) {
-      setError(t('login.errorConfig'));
+    try {
+      const res: any = await api.auth.login({ email, password });
+      if (res.user) {
+        onLogin({
+          id: res.user.id,
+          email: res.user.email,
+          fullName: res.user.fullName,
+          role: res.user.role || 'authorized'
+        });
+      }
+    } catch (err: any) {
+      setError(err.message || t('login.errorConfig'));
+    } finally {
       setLoading(false);
-      return;
-    }
-
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-    } else if (data.user) {
-      onLogin({
-        id: data.user.id,
-        email: data.user.email || '',
-        fullName: data.user.user_metadata?.fullName || data.user.email?.split('@')[0] || t('common.medicalOfficer'),
-        role: data.user.user_metadata?.role || 'authorized'
-      });
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
-      
+
       {/* Background patterns */}
       <div className="absolute top-0 left-0 w-full h-full opacity-[0.05] pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600 rounded-full blur-[120px]"></div>
@@ -75,8 +68,8 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
                   <Mail size={18} />
                 </div>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-14 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white font-bold transition-all text-slate-800 placeholder:text-slate-300"
@@ -92,8 +85,8 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
                   <Lock size={18} />
                 </div>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-14 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white font-bold transition-all text-slate-800 placeholder:text-slate-300"
@@ -109,8 +102,8 @@ const LoginPage: React.FC<Props> = ({ onLogin }) => {
               </div>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/30 disabled:opacity-50 group"
             >
